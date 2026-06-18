@@ -8,4 +8,4 @@ gunicorn==21.2.0
 smartapi-python==1.5.5
 pyotp==2.9.0
 logzero==1.7.0
-PyJWT==2.8.1
+PyJWT==2.8.0
