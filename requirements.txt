@@ -1,0 +1,10 @@
+Flask==2.3.3
+Flask-CORS==4.0.0
+SQLAlchemy==2.0.21
+psycopg2-binary==2.9.7
+python-dotenv==1.0.0
+requests==2.31.0
+gunicorn==21.2.0
+smartapi-python==1.5.5
+pyotp==2.9.0
+logzero==1.7.0

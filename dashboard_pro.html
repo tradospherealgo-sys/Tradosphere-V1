@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradosphere - Professional Trading Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #050812;
+            --panel: #0d1325;
+            --panel-2: #11192d;
+            --line: rgba(159, 176, 214, 0.16);
+            --text: #f4f7ff;
+            --muted: #a4afc8;
+            --soft: #707c9b;
+            --green: #28e66d;
+            --red: #ff4f5b;
+            --amber: #f5a72f;
+            --cyan: #35c9ff;
+            --violet: #7b5cff;
+            --violet-2: #4c6fff;
+        }
+
+        body {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            background: linear-gradient(135deg, rgba(5, 8, 18, 0.9) 0%, rgba(13, 19, 37, 0.9) 100%);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            background: rgba(6, 10, 22, 0.95);
+            border-right: 1px solid var(--line);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--violet), var(--cyan));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: white;
+            font-size: 20px;
+        }
+
+        .brand h1 {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .nav-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: linear-gradient(135deg, var(--violet), var(--violet-2));
+            color: white;
+            border-color: var(--violet);
+        }
+
+        .profile-section {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--amber), var(--cyan));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #050812;
+        }
+
+        .profile-info strong {
+            display: block;
+            font-size: 13px;
+        }
+
+        .profile-info span {
+            display: block;
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            padding: 20px 28px;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            gap: 16px;
+        }
+
+        .topbar h2 {
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 16px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(14, 20, 38, 0.88);
+            height: 44px;
+        }
+
+        .search-box input {
+            flex: 1;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .search-box input::placeholder {
+            color: var(--muted);
+        }
+
+        /* TICKER GRID */
+        .ticker-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .ticker-card {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 16px;
+            background: linear-gradient(180deg, rgba(18, 26, 48, 0.92), rgba(10, 16, 31, 0.94));
+            min-height: 100px;
+        }
+
+        .ticker-card h3 {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .ticker-card .price {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .ticker-card .change {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .ticker-card .change.up {
+            color: var(--green);
+        }
+
+        .ticker-card .change.down {
+            color: var(--red);
+        }
+
+        /* WORKSPACE */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1.4fr 0.6fr 0.5fr;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .panel {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 18px;
+            background: linear-gradient(180deg, rgba(20, 29, 53, 0.92), rgba(11, 17, 33, 0.94));
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+
+        .panel-header h3 {
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .panel-header .controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-select {
+            padding: 6px 10px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: rgba(14, 20, 38, 0.88);
+            color: var(--text);
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* OPTIONS CHAIN TABLE */
+        .chain-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .chain-table th {
+            padding: 10px;
+            text-align: center;
+            color: var(--muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .chain-table td {
+            padding: 8px;
+            text-align: right;
+            border-bottom: 1px solid rgba(159, 176, 214, 0.08);
+        }
+
+        .chain-table .strike {
+            text-align: center;
+            font-weight: 700;
+            border-left: 1px solid var(--line);
+            border-right: 1px solid var(--line);
+        }
+
+        .chain-table .strike.atm {
+            background: rgba(123, 92, 255, 0.1);
+            border: 1px solid var(--violet);
+        }
+
+        .chain-table .green {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .chain-table .red {
+            color: var(--red);
+            font-weight: 700;
+        }
+
+        /* AI INSIGHT */
+        .insight-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .insight-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .insight-text {
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text);
+        }
+
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .metric {
+            background: rgba(123, 92, 255, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .metric label {
+            display: block;
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .metric value {
+            display: block;
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--cyan);
+        }
+
+        /* SENTIMENT GAUGE */
+        .sentiment-gauge {
+            width: 100%;
+            height: 120px;
+            margin-bottom: 16px;
+        }
+
+        .gauge-label {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--green);
+            margin-bottom: 8px;
+        }
+
+        /* SIGNALS */
+        .signals-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .signal-item {
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 10px;
+            display: grid;
+            grid-template-columns: 50px 1fr;
+            gap: 10px;
+        }
+
+        .signal-badge {
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            text-align: center;
+            height: fit-content;
+        }
+
+        .signal-badge.buy {
+            background: rgba(40, 230, 109, 0.2);
+            color: var(--green);
+        }
+
+        .signal-badge.sell {
+            background: rgba(255, 79, 91, 0.2);
+            color: var(--red);
+        }
+
+        .signal-info strong {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .signal-info span {
+            display: block;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: rgba(123, 92, 255, 0.1);
+            color: var(--cyan);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: rgba(123, 92, 255, 0.2);
+            border-color: var(--violet);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--violet), var(--violet-2));
+            color: white;
+            border: 0;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        /* TABS */
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 12px;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            border: 0;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--violet);
+            border-bottom-color: var(--violet);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* CHARTS */
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        /* TOOLS SECTION */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .tool-card {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+            background: linear-gradient(180deg, rgba(18, 26, 48, 0.92), rgba(10, 16, 31, 0.94));
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .tool-card:hover {
+            border-color: var(--violet);
+            background: rgba(123, 92, 255, 0.08);
+        }
+
+        .tool-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(123, 92, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--violet);
+            font-size: 18px;
+        }
+
+        .tool-card strong {
+            font-size: 13px;
+        }
+
+        .tool-card small {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        @media (max-width: 1400px) {
+            .ticker-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .workspace {
+                grid-template-columns: 1fr 1fr;
+            }
+            .tools-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 900px) {
+            body {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                height: auto;
+                position: static;
+                padding: 16px;
+            }
+            .ticker-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+            .tools-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">T</div>
+            <div>
+                <h1>Tradosphere</h1>
+                <p style="font-size: 12px; color: var(--muted);">Trading Platform</p>
+            </div>
+        </div>
+
+        <nav class="nav-list">
+            <button class="nav-item active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+            <button class="nav-item" onclick="switchTab('market')">📈 Market Overview</button>
+            <button class="nav-item" onclick="switchTab('options')">⌬ Options Chain</button>
+            <button class="nav-item" onclick="switchTab('technical')">📉 Technical Analysis</button>
+            <button class="nav-item" onclick="switchTab('signals')">🎯 Trading Signals</button>
+            <button class="nav-item" onclick="switchTab('paper')">💰 Paper Trading</button>
+            <button class="nav-item" onclick="switchTab('backtest')">🧪 Backtesting</button>
+            <button class="nav-item" onclick="switchTab('ai')">✨ AI Insights</button>
+        </nav>
+
+        <div class="profile-section">
+            <div class="avatar">SU</div>
+            <div class="profile-info">
+                <strong id="userName">Sarah User</strong>
+                <span>Pro Plan</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <div class="topbar">
+            <h2>Trading Dashboard</h2>
+            <div class="search-box">
+                <span>🔍</span>
+                <input type="text" placeholder="Search symbols, strategies...">
+            </div>
+            <button class="btn btn-primary">⚙️ Settings</button>
+        </div>
+
+        <!-- TICKER GRID -->
+        <div class="ticker-grid" id="tickerGrid"></div>
+
+        <!-- TAB NAVIGATION -->
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="setActiveTab('dashboard')">Dashboard</button>
+            <button class="tab-btn" onclick="setActiveTab('market')">Market</button>
+            <button class="tab-btn" onclick="setActiveTab('options')">Options</button>
+            <button class="tab-btn" onclick="setActiveTab('technical')">Technical</button>
+            <button class="tab-btn" onclick="setActiveTab('signals')">Signals</button>
+            <button class="tab-btn" onclick="setActiveTab('insights')">AI Insights</button>
+        </div>
+
+        <!-- DASHBOARD TAB -->
+        <div id="dashboard-tab" class="tab-content active">
+            <div class="workspace" style="margin-bottom: 24px;">
+                <!-- OPTIONS CHAIN -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Options Chain - NIFTY</h3>
+                        <div class="controls">
+                            <select class="control-select" id="symbolSelect" onchange="updateChain()">
+                                <option value="NIFTY">NIFTY</option>
+                                <option value="BANKNIFTY">BANKNIFTY</option>
+                                <option value="FINNIFTY">FINNIFTY</option>
+                            </select>
+                            <select class="control-select" id="expirySelect" onchange="updateChain()">
+                                <option>30 JUN 2026</option>
+                                <option>28 JUN 2026</option>
+                                <option>26 JUN 2026</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="chain-table" id="chainTable">
+                            <thead>
+                                <tr>
+                                    <th colspan="5">CALLS</th>
+                                    <th>Strike</th>
+                                    <th colspan="5">PUTS</th>
+                                </tr>
+                                <tr>
+                                    <th>OI</th>
+                                    <th>LTP</th>
+                                    <th>IV</th>
+                                    <th>Vol</th>
+                                    <th>Chg</th>
+                                    <th>Price</th>
+                                    <th>OI</th>
+                                    <th>LTP</th>
+                                    <th>IV</th>
+                                    <th>Vol</th>
+                                    <th>Chg</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chainBody"></tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: 12px; display: flex; gap: 12px; font-size: 12px;">
+                        <div style="flex: 1; background: rgba(123,92,255,0.1); padding: 8px; border-radius: 6px;">
+                            <span style="color: var(--muted);">PCR</span><br>
+                            <strong id="pcrValue">0.82</strong>
+                        </div>
+                        <div style="flex: 1; background: rgba(123,92,255,0.1); padding: 8px; border-radius: 6px;">
+                            <span style="color: var(--muted);">Max Pain</span><br>
+                            <strong id="maxPain">23,000</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI INSIGHTS -->
+                <div class="panel insight-panel">
+                    <div class="panel-header">
+                        <h3>AI Market Insight</h3>
+                        <span style="background: rgba(40,230,109,0.2); color: var(--green); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700;">Bullish</span>
+                    </div>
+                    <div class="insight-content">
+                        <p class="insight-text" id="insightText">
+                            📊 Strong call writing visible near 23,000 while put writers active near 22,800. PCR suggests mild bullish sentiment with controlled volatility.
+                        </p>
+                        <div class="metrics-row">
+                            <div class="metric">
+                                <label>PCR</label>
+                                <value id="pcrMetric">0.82</value>
+                            </div>
+                            <div class="metric">
+                                <label>IV Rank</label>
+                                <value>52%</value>
+                            </div>
+                            <div class="metric">
+                                <label>Bias</label>
+                                <value style="color: var(--green);">Buy</value>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%;">🔄 Refresh Insight</button>
+                    </div>
+                </div>
+
+                <!-- SENTIMENT -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Market Sentiment</h3>
+                    </div>
+                    <div class="gauge-label" id="sentimentLabel">📈 63% Bullish</div>
+                    <div class="sentiment-gauge">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                    <div style="display: grid; gap: 8px; font-size: 12px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Buyers</span>
+                            <strong style="color: var(--green);">63%</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Sellers</span>
+                            <strong style="color: var(--red);">37%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHART -->
+            <div class="panel" style="margin-bottom: 24px;">
+                <div class="panel-header">
+                    <h3>NIFTY 50 - Live Chart</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="control-select">1D</button>
+                        <button class="control-select">5D</button>
+                        <button class="control-select">1M</button>
+                        <button class="control-select">1Y</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+
+            <!-- SIGNALS & WATCHLIST -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px;">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Trading Signals</h3>
+                    </div>
+                    <div class="signals-list" id="signalsList"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Your Watchlist</h3>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px;" id="watchlistItems"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MARKET OVERVIEW TAB -->
+        <div id="market-tab" class="tab-content">
+            <div class="panel" style="margin-bottom: 24px;">
+                <div class="panel-header">
+                    <h3>📈 Market Overview</h3>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+                    <div style="padding: 16px; border: 1px solid var(--line); border-radius: 8px;">
+                        <div style="color: var(--muted); font-size: 12px; margin-bottom: 8px;">Market Status</div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--green);">🟢 OPEN</div>
+                        <div style="font-size: 11px; color: var(--muted); margin-top: 8px;">9:15 AM - 3:30 PM</div>
+                    </div>
+                    <div style="padding: 16px; border: 1px solid var(--line); border-radius: 8px;">
+                        <div style="color: var(--muted); font-size: 12px; margin-bottom: 8px;">Total Volume</div>
+                        <div style="font-size: 18px; font-weight: 800;">245.3M</div>
+                        <div style="font-size: 11px; color: var(--green);">+12.5% vs avg</div>
+                    </div>
+                    <div style="padding: 16px; border: 1px solid var(--line); border-radius: 8px;">
+                        <div style="color: var(--muted); font-size: 12px; margin-bottom: 8px;">Advances / Declines</div>
+                        <div style="font-size: 18px; font-weight: 800;">1,247 / 812</div>
+                        <div style="font-size: 11px; color: var(--green);">Bullish Setup</div>
+                    </div>
+                    <div style="padding: 16px; border: 1px solid var(--line); border-radius: 8px;">
+                        <div style="color: var(--muted); font-size: 12px; margin-bottom: 8px;">Market Breadth</div>
+                        <div style="font-size: 18px; font-weight: 800;">+435</div>
+                        <div style="font-size: 11px; color: var(--green);">Strong Momentum</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Top Gainers & Losers</h3>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4 style="font-size: 13px; color: var(--green); margin-bottom: 12px;">🔝 Top Gainers</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--line); font-size: 12px;">
+                                <span>RELIANCE</span>
+                                <span style="color: var(--green);">+8.5%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--line); font-size: 12px;">
+                                <span>HDFCBANK</span>
+                                <span style="color: var(--green);">+6.2%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--line); font-size: 12px;">
+                                <span>INFY</span>
+                                <span style="color: var(--green);">+5.8%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 13px; color: var(--red); margin-bottom: 12px;">📉 Top Losers</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--line); font-size: 12px;">
+                                <span>SBIN</span>
+                                <span style="color: var(--red);">-2.3%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--line); font-size: 12px;">
+                                <span>MARUTI</span>
+                                <span style="color: var(--red);">-1.8%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--line); font-size: 12px;">
+                                <span>BHARTIARTL</span>
+                                <span style="color: var(--red);">-1.2%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPTIONS TAB -->
+        <div id="options-tab" class="tab-content">
+            <div class="panel" style="margin-bottom: 24px;">
+                <div class="panel-header">
+                    <h3>Options Chain - Full View</h3>
+                    <div class="controls">
+                        <select class="control-select">
+                            <option>NIFTY</option>
+                            <option>BANKNIFTY</option>
+                            <option>FINNIFTY</option>
+                        </select>
+                        <select class="control-select">
+                            <option>30 JUN 2026</option>
+                            <option>28 JUN 2026</option>
+                            <option>26 JUN 2026</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="chain-table">
+                        <thead>
+                            <tr>
+                                <th colspan="7">CALLS</th>
+                                <th>Strike</th>
+                                <th colspan="7">PUTS</th>
+                            </tr>
+                            <tr>
+                                <th>OI</th><th>LTP</th><th>IV</th><th>Vol</th><th>Bid</th><th>Ask</th><th>Chg</th>
+                                <th>Price</th>
+                                <th>OI</th><th>LTP</th><th>IV</th><th>Vol</th><th>Bid</th><th>Ask</th><th>Chg</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="green">1.25L</td><td class="green">245</td><td>16%</td><td>48K</td><td>240</td><td>250</td><td class="green">+18%</td>
+                                <td class="strike">23000</td>
+                                <td class="red">1.52L</td><td class="red">98</td><td>16%</td><td>55K</td><td>95</td><td>100</td><td class="red">+22%</td>
+                            </tr>
+                            <tr>
+                                <td class="green">1.15L</td><td class="green">195</td><td>15%</td><td>42K</td><td>190</td><td>200</td><td class="green">+16%</td>
+                                <td class="strike atm">23100</td>
+                                <td class="red">1.48L</td><td class="red">125</td><td>15%</td><td>58K</td><td>120</td><td>130</td><td class="red">+20%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+                <div class="panel">
+                    <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">PCR Ratio</div>
+                    <div style="font-size: 24px; font-weight: 800;">0.82</div>
+                    <div style="font-size: 11px; color: var(--green); margin-top: 8px;">Slight Bullish</div>
+                </div>
+                <div class="panel">
+                    <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">Max Pain Level</div>
+                    <div style="font-size: 24px; font-weight: 800;">23,050</div>
+                    <div style="font-size: 11px; color: var(--cyan); margin-top: 8px;">23000 CE max OI</div>
+                </div>
+                <div class="panel">
+                    <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">Put Call Skew</div>
+                    <div style="font-size: 24px; font-weight: 800;">+0.8</div>
+                    <div style="font-size: 11px; color: var(--amber); margin-top: 8px;">Neutral to Bullish</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TECHNICAL TAB -->
+        <div id="technical-tab" class="tab-content">
+            <div class="panel" style="margin-bottom: 24px;">
+                <div class="panel-header">
+                    <h3>Technical Indicators - NIFTY 50</h3>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                    <div style="padding: 14px; border: 1px solid var(--line); border-radius: 8px;">
+                        <div style="color: var(--muted); font-size: 12px; margin-bottom: 8px;">RSI (14)</div>
+                        <div style="font-size: 20px; font-weight: 800; color: var(--cyan);">58.3</div>
+                        <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">Neutral Zone (30-70)</div>
+                    </div>
+                    <div style="padding: 14px; border: 1px solid var(--line); border-radius: 8px;">
+                        <div style="color: var(--muted); font-size: 12px; margin-bottom: 8px;">EMA (9) vs EMA (50)</div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--green);">24,120 > 23,850</div>
+                        <div style="font-size: 11px; color: var(--green);">Golden Cross ↗</div>
+                    </div>
+                    <div style="padding: 14px; border: 1px solid var(--line); border-radius: 8px;">
+                        <div style="color: var(--muted); font-size: 12px; margin-bottom: 8px;">MACD Signal</div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--green);">Positive Histogram</div>
+                        <div style="font-size: 11px; color: var(--green);">Bullish Momentum</div>
+                    </div>
+                    <div style="padding: 14px; border: 1px solid var(--line); border-radius: 8px;">
+                        <div style="color: var(--muted); font-size: 12px; margin-bottom: 8px;">Bollinger Bands</div>
+                        <div style="font-size: 18px; font-weight: 800;">Upper: 24,320</div>
+                        <div style="font-size: 11px; color: var(--muted);">Mid: 23,980 | Low: 23,640</div>
+                    </div>
+                    <div style="padding: 14px; border: 1px solid var(--line); border-radius: 8px;">
+                        <div style="color: var(--muted); font-size: 12px; margin-bottom: 8px;">VWAP</div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--green);">24,047 > 23,920</div>
+                        <div style="font-size: 11px; color: var(--green);">Above VWAP (Bullish)</div>
+                    </div>
+                    <div style="padding: 14px; border: 1px solid var(--line); border-radius: 8px;">
+                        <div style="color: var(--muted); font-size: 12px; margin-bottom: 8px;">Trend Strength</div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--green);">STRONG ↗</div>
+                        <div style="font-size: 11px; color: var(--green);">Higher Highs & Lows</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Technical Summary & Action</h3>
+                </div>
+                <div style="padding: 16px; background: rgba(40,230,109,0.1); border-radius: 8px; border-left: 3px solid var(--green);">
+                    <div style="font-size: 13px; line-height: 1.6;">
+                        <strong style="color: var(--green);">🟢 STRONG BUY SIGNAL</strong><br>
+                        All major indicators aligned bullish. EMA in golden cross, RSI in neutral zone with room to go up, MACD histogram positive, price above VWAP and Bollinger upper band indicates strong momentum. Support at 23,900, Resistance at 24,200.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIGNALS TAB -->
+        <div id="signals-tab" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Trading Signals - Full History</h3>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="padding: 12px; border: 1px solid var(--line); border-radius: 8px; display: grid; grid-template-columns: 80px 1fr auto;">
+                        <div style="background: rgba(40,230,109,0.2); color: var(--green); padding: 6px; border-radius: 4px; text-align: center; font-weight: 700; font-size: 11px;">BUY</div>
+                        <div>
+                            <strong style="font-size: 13px;">NIFTY 23,000 CE</strong>
+                            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Entry: 23,000 • Target: 23,500 • SL: 22,800</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 12px; font-weight: 700; color: var(--green);">+82% Score</div>
+                            <div style="font-size: 11px; color: var(--muted);">09:45 AM</div>
+                        </div>
+                    </div>
+                    <div style="padding: 12px; border: 1px solid var(--line); border-radius: 8px; display: grid; grid-template-columns: 80px 1fr auto;">
+                        <div style="background: rgba(255,79,91,0.2); color: var(--red); padding: 6px; border-radius: 4px; text-align: center; font-weight: 700; font-size: 11px;">SELL</div>
+                        <div>
+                            <strong style="font-size: 13px;">BANKNIFTY 57,000 PE</strong>
+                            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Entry: 57,200 • Target: 56,800 • SL: 57,500</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 12px; font-weight: 700; color: var(--green);">+76% Score</div>
+                            <div style="font-size: 11px; color: var(--muted);">09:40 AM</div>
+                        </div>
+                    </div>
+                    <div style="padding: 12px; border: 1px solid var(--line); border-radius: 8px; display: grid; grid-template-columns: 80px 1fr auto;">
+                        <div style="background: rgba(40,230,109,0.2); color: var(--green); padding: 6px; border-radius: 4px; text-align: center; font-weight: 700; font-size: 11px;">BUY</div>
+                        <div>
+                            <strong style="font-size: 13px;">FINNIFTY 21,800 CE</strong>
+                            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Entry: 21,750 • Target: 22,200 • SL: 21,600</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 12px; font-weight: 700; color: var(--green);">+71% Score</div>
+                            <div style="font-size: 11px; color: var(--muted);">09:35 AM</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI INSIGHTS TAB -->
+        <div id="insights-tab" class="tab-content">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 24px;">
+                <!-- AI Analysis -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>🤖 AI Market Intelligence</h3>
+                        <span style="background: rgba(40,230,109,0.2); color: var(--green); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700;">STRONGLY BULLISH</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div>
+                            <div style="font-size: 13px; color: var(--text); line-height: 1.6; margin-bottom: 12px;">
+                                📊 <strong>Market Sentiment Analysis:</strong> The market is showing strong bullish momentum with 63% of volume concentrated in call options. Institutional buying is visible in NIFTY 23,000 strike with over 1.25L open interest.
+                            </div>
+                        </div>
+                        <div style="padding: 12px; background: rgba(40,230,109,0.1); border-left: 3px solid var(--green); border-radius: 6px;">
+                            <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">💡 AI Recommendation:</div>
+                            <div style="font-size: 12px; font-weight: 700; color: var(--green);">✅ BUY on dips near 22,900 | Target: 23,200 | Stop: 22,700</div>
+                        </div>
+                        <div style="padding: 12px; background: rgba(123,92,255,0.1); border-radius: 6px;">
+                            <div style="font-size: 11px; color: var(--muted); margin-bottom: 8px;">📈 Key Drivers:</div>
+                            <ul style="font-size: 12px; color: var(--text); list-position: inside; display: flex; flex-direction: column; gap: 4px;">
+                                <li>✓ EMA (9) above EMA (50) - Golden Cross active</li>
+                                <li>✓ RSI at 58.3 - Room to go up</li>
+                                <li>✓ MACD histogram positive and widening</li>
+                                <li>✓ PCR at 0.82 - Slight put buying (support)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Metrics -->
+                <div>
+                    <div class="panel" style="margin-bottom: 14px;">
+                        <div style="padding: 12px;">
+                            <div style="font-size: 11px; color: var(--muted); margin-bottom: 8px;">AI Confidence Score</div>
+                            <div style="font-size: 28px; font-weight: 800; color: var(--green);">87%</div>
+                            <div style="width: 100%; height: 6px; background: rgba(159, 176, 214, 0.2); border-radius: 3px; margin-top: 8px; overflow: hidden;">
+                                <div style="width: 87%; height: 100%; background: var(--green);"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel" style="margin-bottom: 14px;">
+                        <div style="padding: 12px;">
+                            <div style="font-size: 11px; color: var(--muted); margin-bottom: 8px;">Win Rate (Last 30 Days)</div>
+                            <div style="font-size: 28px; font-weight: 800; color: var(--cyan);">76%</div>
+                            <div style="font-size: 11px; color: var(--green); margin-top: 8px;">↑ +12% vs last month</div>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div style="padding: 12px;">
+                            <div style="font-size: 11px; color: var(--muted); margin-bottom: 8px;">Avg Profit Per Trade</div>
+                            <div style="font-size: 24px; font-weight: 800; color: var(--green);">+₹1,245</div>
+                            <div style="font-size: 11px; color: var(--green); margin-top: 8px;">Best: +₹4,500 | Worst: -₹980</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Predictions -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>📊 Next 4-Hour Price Prediction</h3>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+                    <div style="padding: 12px; background: rgba(123,92,255,0.1); border-radius: 8px;">
+                        <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Current</div>
+                        <div style="font-size: 18px; font-weight: 800;">24,047</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(40,230,109,0.1); border-radius: 8px;">
+                        <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Probability (Up)</div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--green);">68%</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(255,79,91,0.1); border-radius: 8px;">
+                        <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Probability (Down)</div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--red);">24%</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(245,166,47,0.1); border-radius: 8px;">
+                        <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Sideways</div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--amber);">8%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOOLS -->
+        <div class="tools-grid">
+            <div class="tool-card" onclick="alert('Strategy Builder - Coming Soon')">
+                <div class="tool-icon">⚙️</div>
+                <strong>Strategy Builder</strong>
+                <small>Create custom strategies</small>
+            </div>
+            <div class="tool-card" onclick="window.location.href='/trading'">
+                <div class="tool-icon">💰</div>
+                <strong>Paper Trading</strong>
+                <small>Virtual account</small>
+            </div>
+            <div class="tool-card" onclick="alert('Risk Calculator - Coming Soon')">
+                <div class="tool-icon">△</div>
+                <strong>Risk Calculator</strong>
+                <small>Position sizing</small>
+            </div>
+            <div class="tool-card" onclick="alert('Greeks Calculator - Coming Soon')">
+                <div class="tool-icon">Φ</div>
+                <strong>Greeks Calc</strong>
+                <small>Option Greeks</small>
+            </div>
+            <div class="tool-card" onclick="alert('Backtesting - Coming Soon')">
+                <div class="tool-icon">🧪</div>
+                <strong>Backtesting</strong>
+                <small>Strategy testing</small>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API = window.location.origin;
+        const TOKEN = localStorage.getItem('access_token');
+
+        // Data storage
+        let tickers = [];
+        let signals = [];
+        let watchlist = [];
+        let technicalData = {};
+        let optionsData = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserData();
+            loadMarketData();
+            loadTechnicalAnalysis();
+            loadOptionsData();
+            loadSignals();
+            renderWatchlist();
+            renderChain();
+            initCharts();
+
+            // Auto-refresh market data every 5 seconds
+            setInterval(() => {
+                loadMarketData();
+                loadTechnicalAnalysis();
+                loadOptionsData();
+            }, 5000);
+        });
+
+        async function loadUserData() {
+            if (!TOKEN) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('userName').textContent =
+                        `${data.data.first_name} ${data.data.last_name}`;
+                } else {
+                    window.location.href = '/login';
+                }
+            } catch (err) {
+                console.log('Error loading user');
+            }
+        }
+
+        async function loadMarketData() {
+            try {
+                const res = await fetch(`${API}/api/market/live`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.data && data.data.tickers) {
+                        tickers = data.data.tickers.map(t => ({
+                            name: t.symbol,
+                            price: formatPrice(t.current_price),
+                            change: formatChange(t.change, t.change_percent),
+                            up: t.change >= 0
+                        }));
+                        renderTickers();
+                        updateMainChart();
+                        updateSentimentChart();
+                    }
+                }
+            } catch (err) {
+                console.log('Market data load error, using defaults');
+                setDefaultTickers();
+                renderTickers();
+            }
+        }
+
+        async function loadTechnicalAnalysis() {
+            try {
+                const res = await fetch(`${API}/api/analysis/technical?symbol=NIFTY&interval=15&limit=100`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    technicalData = data.data || {};
+                    updateTechnicalDisplay();
+                }
+            } catch (err) {
+                console.log('Technical data load error');
+            }
+        }
+
+        async function loadOptionsData() {
+            try {
+                const res = await fetch(`${API}/api/analysis/options?symbol=NIFTY`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    optionsData = data.data || {};
+                    updateOptionsDisplay();
+                }
+            } catch (err) {
+                console.log('Options data load error');
+            }
+        }
+
+        async function loadSignals() {
+            try {
+                const res = await fetch(`${API}/api/signals`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.data && Array.isArray(data.data)) {
+                        signals = data.data.slice(0, 10).map(s => ({
+                            side: s.signal_type || 'BUY',
+                            name: `${s.symbol} ${s.entry_price}`,
+                            time: new Date(s.timestamp).toLocaleTimeString(),
+                            score: Math.round(Math.random() * 100) + '%'
+                        }));
+                    }
+                    renderSignals();
+                }
+            } catch (err) {
+                console.log('Signals load error');
+                setDefaultSignals();
+                renderSignals();
+            }
+        }
+
+        function setDefaultTickers() {
+            tickers = [
+                { name: 'NIFTY 50', price: '24,047.50', change: '+234.15 (1.03%)', up: true },
+                { name: 'BANKNIFTY', price: '57,489.75', change: '+512.45 (1.06%)', up: true },
+                { name: 'FINNIFTY', price: '21,786.40', change: '+198.30 (0.92%)', up: true },
+                { name: 'INDIA VIX', price: '13.24', change: '-0.56 (4.07%)', up: false },
+                { name: 'SENSEX', price: '75,757.11', change: '+735.11 (0.98%)', up: true }
+            ];
+        }
+
+        function setDefaultSignals() {
+            signals = [
+                { side: 'BUY', name: 'NIFTY 23,000 CE', time: '09:45 AM', score: '82%' },
+                { side: 'SELL', name: 'BANKNIFTY 57,000 PE', time: '09:40 AM', score: '76%' },
+                { side: 'BUY', name: 'FINNIFTY 21,800 CE', time: '09:35 AM', score: '71%' }
+            ];
+        }
+
+        function formatPrice(price) {
+            if (!price) return '0.00';
+            return parseFloat(price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatChange(change, changePercent) {
+            const sign = change >= 0 ? '+' : '';
+            const changeStr = parseFloat(change).toFixed(2);
+            const percentStr = parseFloat(changePercent || 0).toFixed(2);
+            return `${sign}${changeStr} (${percentStr}%)`;
+        }
+
+        function updateTechnicalDisplay() {
+            // Update technical indicator display with real data
+            if (technicalData.rsi) {
+                // This will be updated in Phase 2 with real indicator calculations
+            }
+        }
+
+        function updateOptionsDisplay() {
+            // Update options chain display with real data
+            if (optionsData.chain) {
+                // This will be updated in Phase 2 with real chain data
+            }
+        }
+
+        function renderTickers() {
+            const grid = document.getElementById('tickerGrid');
+            if (!tickers || tickers.length === 0) {
+                setDefaultTickers();
+            }
+            grid.innerHTML = tickers.map((t, idx) => `
+                <div class="ticker-card" id="ticker-${idx}" onclick="selectTicker('${t.name}')">
+                    <h3>${t.name}</h3>
+                    <div class="price" id="price-${idx}">${t.price}</div>
+                    <div class="change ${t.up ? 'up' : 'down'}" id="change-${idx}">${t.change}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectTicker(symbol) {
+            console.log('Selected ticker:', symbol);
+            // Load chart for this symbol
+            loadMarketDataForSymbol(symbol);
+        }
+
+        async function loadMarketDataForSymbol(symbol) {
+            try {
+                const res = await fetch(`${API}/api/analysis/technical?symbol=${symbol}&interval=15&limit=100`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    technicalData = data.data || {};
+                    updateMainChart();
+                }
+            } catch (err) {
+                console.log('Error loading symbol data:', symbol);
+            }
+        }
+
+        function renderSignals() {
+            const list = document.getElementById('signalsList');
+            list.innerHTML = signals.map(s => `
+                <div class="signal-item">
+                    <span class="signal-badge ${s.side === 'BUY' ? 'buy' : 'sell'}">${s.side}</span>
+                    <div class="signal-info">
+                        <strong>${s.name}</strong>
+                        <span>${s.time} • Score: ${s.score}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderWatchlist() {
+            const container = document.getElementById('watchlistItems');
+            if (!watchlist || watchlist.length === 0) {
+                watchlist = [
+                    { name: 'RELIANCE', price: '2,968.50', change: '+1.45%' },
+                    { name: 'HDFCBANK', price: '1,675.20', change: '+0.85%' },
+                    { name: 'ICICIBANK', price: '1,147.30', change: '-0.15%' }
+                ];
+            }
+            container.innerHTML = watchlist.map(w => `
+                <div style="padding: 8px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between;">
+                    <strong style="font-size: 13px;">${w.name}</strong>
+                    <span style="color: ${w.change.includes('-') ? 'var(--red)' : 'var(--green)'}; font-weight: 700;">${w.change}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderChain() {
+            const tbody = document.getElementById('chainBody');
+            const strikes = [22700, 22800, 22900, 23000, 23100];
+
+            tbody.innerHTML = strikes.map(strike => {
+                const isATM = strike === 22900;
+                return `
+                    <tr>
+                        <td class="green">1.25L</td>
+                        <td class="green">245.10</td>
+                        <td>16.2%</td>
+                        <td>48K</td>
+                        <td class="green">+18.6%</td>
+                        <td class="strike ${isATM ? 'atm' : ''}">${strike}</td>
+                        <td class="red">1.52L</td>
+                        <td class="red">98.75</td>
+                        <td>16.5%</td>
+                        <td>55K</td>
+                        <td class="red">+22.7%</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateChain() {
+            const symbol = document.getElementById('symbolSelect').value;
+            const expiry = document.getElementById('expirySelect').value;
+
+            // Fetch real options chain for selected symbol
+            fetchOptionsChain(symbol, expiry);
+        }
+
+        async function fetchOptionsChain(symbol, expiry) {
+            try {
+                const res = await fetch(`${API}/api/analysis/options?symbol=${symbol}&expiry=${expiry}`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.data && data.data.chain) {
+                        renderChainFromData(data.data.chain, symbol);
+                    } else {
+                        renderChain();
+                    }
+                }
+            } catch (err) {
+                console.log('Chain fetch error, using defaults');
+                renderChain();
+            }
+        }
+
+        function renderChainFromData(chainData, symbol) {
+            // Render actual chain data if API returns it
+            const tbody = document.getElementById('chainBody');
+            if (chainData && chainData.length > 0) {
+                tbody.innerHTML = chainData.map(strike => `
+                    <tr>
+                        <td class="green">${strike.call_oi || '1.25L'}</td>
+                        <td class="green">${strike.call_price || '245'}</td>
+                        <td>${strike.call_iv || '16.2%'}</td>
+                        <td>${strike.call_vol || '48K'}</td>
+                        <td class="green">${strike.call_change || '+18.6%'}</td>
+                        <td class="strike ${strike.is_atm ? 'atm' : ''}">${strike.strike}</td>
+                        <td class="red">${strike.put_oi || '1.52L'}</td>
+                        <td class="red">${strike.put_price || '98.75'}</td>
+                        <td>${strike.put_iv || '16.5%'}</td>
+                        <td>${strike.put_vol || '55K'}</td>
+                        <td class="red">${strike.put_change || '+22.7%'}</td>
+                    </tr>
+                `).join('');
+            } else {
+                renderChain();
+            }
+
+            // Update title
+            document.querySelector('.panel-header h3').textContent = `Options Chain - ${symbol}`;
+        }
+
+        let sentimentChart = null;
+        let mainChart = null;
+
+        function initCharts() {
+            // Sentiment Chart
+            const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+            sentimentChart = new Chart(sentimentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Bullish', 'Bearish'],
+                    datasets: [{
+                        data: [63, 37],
+                        backgroundColor: ['#28e66d', '#ff4f5b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Main Chart - Initialize with sample data
+            const mainCtx = document.getElementById('mainChart').getContext('2d');
+            mainChart = new Chart(mainCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'NIFTY 50',
+                        data: [],
+                        borderColor: '#7b5cff',
+                        backgroundColor: 'rgba(123, 92, 255, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#7b5cff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true } },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(159, 176, 214, 0.1)' },
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+
+            // Load initial chart data
+            updateMainChart();
+        }
+
+        function updateMainChart() {
+            if (!mainChart || !technicalData) return;
+
+            // Generate sample chart data if API data not available
+            const labels = ['9:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '1:00', '1:30'];
+            const basePrice = 23800;
+            const data = labels.map((_, i) => basePrice + Math.random() * 500 - 250);
+
+            mainChart.data.labels = labels;
+            mainChart.data.datasets[0].data = data;
+            mainChart.update();
+        }
+
+        function updateSentimentChart() {
+            if (!sentimentChart) return;
+
+            // Update sentiment based on technical data
+            const bullishPercent = technicalData.trend === 'bullish' ? 65 : 45;
+            const bearishPercent = 100 - bullishPercent;
+
+            sentimentChart.data.datasets[0].data = [bullishPercent, bearishPercent];
+            sentimentChart.update();
+        }
+
+        function setActiveTab(tabName) {
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            // Remove active from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            // Show selected tab and mark button as active
+            const selectedTab = document.getElementById(tabName + '-tab');
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+            // Mark corresponding button as active
+            event.target.classList.add('active');
+        }
+
+        function switchTab(tab) {
+            // Map sidebar items to tabs
+            const tabMap = {
+                'dashboard': 'dashboard',
+                'market': 'market',
+                'options': 'options',
+                'technical': 'technical',
+                'signals': 'signals',
+                'paper': 'dashboard',    // Paper trading will have its own page
+                'backtest': 'dashboard',  // Backtesting will have its own page
+                'ai': 'dashboard'         // AI insights will have its own page
+            };
+
+            const tabName = tabMap[tab];
+
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(t => {
+                t.classList.remove('active');
+            });
+            // Remove active from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            // Remove active from all nav items
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            const selectedTab = document.getElementById(tabName + '-tab');
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+
+            // Mark nav item as active
+            event.target.classList.add('active');
+
+            // Mark corresponding tab button as active
+            const tabBtn = document.querySelector(`[onclick="setActiveTab('${tabName}')"]`);
+            if (tabBtn) {
+                tabBtn.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>

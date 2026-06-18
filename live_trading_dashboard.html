@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Trading Dashboard - Tradosphere</title>
+    <script src="https://lightweight-charts.tradingview.com/standalone.production.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0F1419;
+            --card: #1A2332;
+            --border: #374151;
+            --accent: #6366F1;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --text: #E5E7EB;
+            --muted: #9CA3AF;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .menu {
+            list-style: none;
+            flex: 1;
+        }
+
+        .menu-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--muted);
+        }
+
+        .menu-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--accent);
+        }
+
+        .menu-item.active {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--accent);
+        }
+
+        .user-info {
+            padding: 15px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-top: 20px;
+        }
+
+        .user-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .user-email {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 20px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .symbol-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .price-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .price {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .change {
+            font-size: 18px;
+        }
+
+        .change.up { color: var(--success); }
+        .change.down { color: var(--danger); }
+
+        #chart {
+            flex: 1;
+            min-height: 400px;
+        }
+
+        /* Right Sidebar */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .panel-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .panel-title {
+            font-weight: 700;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .account-stat {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .account-stat-label {
+            color: var(--muted);
+        }
+
+        .account-stat-value {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: rgba(99, 102, 241, 0.9);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-danger {
+            background: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: rgba(16, 185, 129, 0.9);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .trades-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .trade-item {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 3px solid var(--accent);
+            font-size: 12px;
+        }
+
+        .trade-item.winning {
+            border-left-color: var(--success);
+        }
+
+        .trade-item.losing {
+            border-left-color: var(--danger);
+        }
+
+        .trade-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons .btn {
+            flex: 1;
+        }
+
+        @media (max-width: 1200px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 15px;
+            }
+
+            .menu {
+                display: flex;
+                gap: 10px;
+            }
+
+            .menu-item {
+                margin-bottom: 0;
+            }
+        }
+
+        .spinner {
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">📊 TRADOSPHERE</div>
+            <ul class="menu">
+                <li class="menu-item active" onclick="switchSection('trading')">Trading</li>
+                <li class="menu-item" onclick="switchSection('signals')">Signals</li>
+                <li class="menu-item" onclick="switchSection('trades')">Open Trades</li>
+                <li class="menu-item" onclick="switchSection('performance')">Performance</li>
+                <li class="menu-item" onclick="switchSection('settings')">Settings</li>
+            </ul>
+            <div class="user-info">
+                <div class="user-name" id="userName">Loading...</div>
+                <div class="user-email" id="userEmail">user@tradosphere.ai</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main">
+            <div class="header">
+                <div class="title" id="sectionTitle">Live Trading</div>
+                <div class="symbol-tabs">
+                    <button class="tab-btn active" onclick="switchSymbol('NIFTY')">NIFTY</button>
+                    <button class="tab-btn" onclick="switchSymbol('BANKNIFTY')">BANKNIFTY</button>
+                </div>
+            </div>
+
+            <!-- Trading Section -->
+            <div class="content" id="tradingSection">
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div class="price-info">
+                            <div>
+                                <div style="color: var(--muted); font-size: 12px;">Current Price</div>
+                                <div class="price" id="currentPrice">-</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--muted); font-size: 12px;">24h Change</div>
+                                <div class="change" id="priceChange">0.00%</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-secondary" onclick="openTradeModal()">Open Trade</button>
+                            <button class="btn btn-secondary" onclick="trackSignalModal()">Track Signal</button>
+                        </div>
+                    </div>
+                    <div id="chart"></div>
+                </div>
+
+                <div class="right-panel">
+                    <!-- Account Stats -->
+                    <div class="panel-card">
+                        <div class="panel-title">Account Stats</div>
+                        <div class="account-stat">
+                            <span class="account-stat-label">Balance</span>
+                            <span class="account-stat-value" id="accountBalance">₹0</span>
+                        </div>
+                        <div class="account-stat">
+                            <span class="account-stat-label">P&L</span>
+                            <span class="account-stat-value" id="accountPnL">₹0</span>
+                        </div>
+                        <div class="account-stat">
+                            <span class="account-stat-label">Win Rate</span>
+                            <span class="account-stat-value" id="accountWinRate">0%</span>
+                        </div>
+                        <div class="account-stat">
+                            <span class="account-stat-label">Total Trades</span>
+                            <span class="account-stat-value" id="totalTrades">0</span>
+                        </div>
+                        <button class="btn btn-secondary" onclick="resetAccount()" style="margin-top: 15px;">Reset Account</button>
+                    </div>
+
+                    <!-- Quick Trade -->
+                    <div class="panel-card">
+                        <div class="panel-title">Quick Trade</div>
+                        <div class="form-group">
+                            <label class="form-label">Type</label>
+                            <select id="quickTradeType" class="form-input">
+                                <option>BUY</option>
+                                <option>SELL</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Quantity</label>
+                            <input type="number" id="quickQuantity" class="form-input" value="1" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Entry Price</label>
+                            <input type="number" id="quickEntry" class="form-input" value="0" step="0.01">
+                        </div>
+                        <button class="btn btn-success" onclick="quickTrade()">Execute Trade</button>
+                    </div>
+
+                    <!-- Recent Trades -->
+                    <div class="panel-card">
+                        <div class="panel-title">Recent Trades</div>
+                        <div class="trades-list" id="recentTrades">
+                            <div style="text-align: center; color: var(--muted); padding: 20px;">No trades yet</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other Sections (placeholder) -->
+            <div class="content" id="signalsSection" style="display: none;">
+                <div class="panel-card" style="grid-column: 1/-1;">
+                    <div class="panel-title">Signal Tracking</div>
+                    <div id="signalsList" style="max-height: 500px; overflow-y: auto;">
+                        <div style="text-align: center; color: var(--muted); padding: 40px;">Loading signals...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content" id="tradesSection" style="display: none;">
+                <div class="panel-card" style="grid-column: 1/-1;">
+                    <div class="panel-title">Open Trades</div>
+                    <div id="openTradesList" style="max-height: 500px; overflow-y: auto;">
+                        <div style="text-align: center; color: var(--muted); padding: 40px;">No open trades</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content" id="performanceSection" style="display: none;">
+                <div class="panel-card" style="grid-column: 1/-1;">
+                    <div class="panel-title">Performance Metrics</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                        <div>
+                            <div style="color: var(--muted); font-size: 12px;">Total P&L</div>
+                            <div style="font-size: 20px; font-weight: 700; color: var(--success);" id="totalPnL">₹0</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--muted); font-size: 12px;">Win Rate</div>
+                            <div style="font-size: 20px; font-weight: 700;" id="winRatePerf">0%</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--muted); font-size: 12px;">Profit Factor</div>
+                            <div style="font-size: 20px; font-weight: 700;" id="profitFactor">0.00</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--muted); font-size: 12px;">Avg Win</div>
+                            <div style="font-size: 20px; font-weight: 700; color: var(--success);" id="avgWin">₹0</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--muted); font-size: 12px;">Avg Loss</div>
+                            <div style="font-size: 20px; font-weight: 700; color: var(--danger);" id="avgLoss">₹0</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--muted); font-size: 12px;">Signal Accuracy</div>
+                            <div style="font-size: 20px; font-weight: 700;" id="signalAccuracy">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content" id="settingsSection" style="display: none;">
+                <div class="panel-card" style="grid-column: 1/-1;">
+                    <div class="panel-title">Trading Settings</div>
+                    <div class="form-group">
+                        <label class="form-label">Capital per Account</label>
+                        <input type="number" id="capitalInput" class="form-input" value="100000" step="1000">
+                        <button class="btn btn-primary" onclick="updateCapital()" style="margin-top: 10px;">Update</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="tradeModal">
+        <div class="modal-content">
+            <div class="modal-header">Open Trade</div>
+            <div class="form-group">
+                <label class="form-label">Trade Type</label>
+                <select id="tradeType" class="form-input">
+                    <option>BUY</option>
+                    <option>SELL</option>
+                    <option>CALL</option>
+                    <option>PUT</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Signal Type</label>
+                <select id="signalType" class="form-input">
+                    <option>TECHNICAL</option>
+                    <option>OPTIONS</option>
+                    <option>MOMENTUM</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Entry Price</label>
+                <input type="number" id="entryPrice" class="form-input" step="0.01">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Quantity</label>
+                <input type="number" id="tradeQuantity" class="form-input" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Stop Loss (optional)</label>
+                <input type="number" id="tradeStopLoss" class="form-input" step="0.01">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Take Profit (optional)</label>
+                <input type="number" id="tradeTakeProfit" class="form-input" step="0.01">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea id="tradeDescription" class="form-input" rows="2" placeholder="Trade notes..."></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="submitTrade()">Open Trade</button>
+                <button class="btn btn-secondary" onclick="closeModal('tradeModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="signalModal">
+        <div class="modal-content">
+            <div class="modal-header">Track Signal</div>
+            <div class="form-group">
+                <label class="form-label">Signal Type</label>
+                <select id="trackSignalType" class="form-input">
+                    <option>TECHNICAL</option>
+                    <option>OPTIONS</option>
+                    <option>MOMENTUM</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Direction</label>
+                <select id="signalDirection" class="form-input">
+                    <option>BUY</option>
+                    <option>SELL</option>
+                    <option>CALL</option>
+                    <option>PUT</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Entry Price</label>
+                <input type="number" id="signalEntry" class="form-input" step="0.01">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target Price</label>
+                <input type="number" id="signalTarget" class="form-input" step="0.01">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Stop Loss</label>
+                <input type="number" id="signalStopLoss" class="form-input" step="0.01">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea id="signalDescription" class="form-input" rows="2" placeholder="Signal notes..."></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="submitSignal()">Track Signal</button>
+                <button class="btn btn-secondary" onclick="closeModal('signalModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = window.location.origin;
+        let currentSymbol = 'NIFTY';
+        let currentAccount = null;
+        let chart = null;
+        let candleSeries = null;
+
+        // Initialize
+        async function init() {
+            await loadUserData();
+            await loadAccount();
+            initChart();
+            setInterval(updatePrice, 2000);
+            setInterval(loadTrades, 5000);
+        }
+
+        async function loadUserData() {
+            try {
+                const response = await fetch(`${API}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                });
+                const data = await response.json();
+                if (data.data?.user) {
+                    document.getElementById('userName').textContent = data.data.user.first_name || 'User';
+                    document.getElementById('userEmail').textContent = data.data.user.email;
+                }
+            } catch (e) {
+                console.error('Failed to load user data:', e);
+            }
+        }
+
+        async function loadAccount() {
+            try {
+                const response = await fetch(`${API}/api/trading/account/${currentSymbol}?capital=100000`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                });
+                const data = await response.json();
+                if (data.data) {
+                    currentAccount = data.data;
+                    updateAccountDisplay();
+                }
+            } catch (e) {
+                console.error('Failed to load account:', e);
+            }
+        }
+
+        function initChart() {
+            const chartContainer = document.getElementById('chart');
+            if (!chart) {
+                chart = LightweightCharts.createChart(chartContainer, {
+                    width: chartContainer.clientWidth,
+                    height: chartContainer.clientHeight,
+                    layout: { background: { color: '#0F1419' }, textColor: '#9CA3AF' },
+                    timeScale: { timeVisible: true, secondsVisible: true }
+                });
+
+                candleSeries = chart.addCandlestickSeries({
+                    upColor: '#10B981',
+                    downColor: '#EF4444',
+                    borderDownColor: '#EF4444',
+                    borderUpColor: '#10B981'
+                });
+
+                chart.timeScale().fitContent();
+            }
+        }
+
+        async function updatePrice() {
+            try {
+                const response = await fetch(`${API}/api/market/live`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    const price = currentSymbol === 'NIFTY' ? data.NIFTY : data.BANKNIFTY;
+                    if (price) {
+                        document.getElementById('currentPrice').textContent = price.toFixed(2);
+                    }
+                }
+            } catch (e) {
+                console.error('Price update error:', e);
+            }
+        }
+
+        function updateAccountDisplay() {
+            if (!currentAccount) return;
+            document.getElementById('accountBalance').textContent = `₹${currentAccount.current_balance.toFixed(2)}`;
+            document.getElementById('accountPnL').textContent = `₹${currentAccount.total_pnl.toFixed(2)}`;
+            document.getElementById('accountWinRate').textContent = `${currentAccount.win_rate.toFixed(1)}%`;
+            document.getElementById('totalTrades').textContent = currentAccount.total_trades;
+        }
+
+        async function loadTrades() {
+            if (!currentAccount) return;
+            try {
+                const response = await fetch(`${API}/api/trading/trades/${currentAccount.id}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                });
+                const data = await response.json();
+                if (data.data) {
+                    const recentTrades = data.data.slice(0, 5);
+                    const html = recentTrades.map(trade => `
+                        <div class="trade-item ${trade.pnl > 0 ? 'winning' : 'losing'}">
+                            <div class="trade-row">
+                                <strong>${trade.trade_type}</strong>
+                                <strong class="change ${trade.pnl > 0 ? 'up' : 'down'}">
+                                    ${trade.pnl > 0 ? '+' : ''}₹${trade.pnl.toFixed(2)}
+                                </strong>
+                            </div>
+                            <div class="trade-row">
+                                <span>Entry: ${trade.entry_price}</span>
+                                <span>Exit: ${trade.exit_price || '-'}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                    document.getElementById('recentTrades').innerHTML = html || '<div style="text-align: center; color: var(--muted); padding: 20px;">No trades yet</div>';
+                }
+            } catch (e) {
+                console.error('Failed to load trades:', e);
+            }
+        }
+
+        function switchSymbol(symbol) {
+            currentSymbol = symbol;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            loadAccount();
+        }
+
+        function switchSection(section) {
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const sections = ['tradingSection', 'signalsSection', 'tradesSection', 'performanceSection', 'settingsSection'];
+            sections.forEach(s => {
+                document.getElementById(s).style.display = s === section + 'Section' ? 'grid' : 'none';
+            });
+
+            const titles = { trading: 'Live Trading', signals: 'Signal Tracking', trades: 'Open Trades', performance: 'Performance', settings: 'Settings' };
+            document.getElementById('sectionTitle').textContent = titles[section] || 'Trading';
+        }
+
+        function openTradeModal() {
+            document.getElementById('tradeModal').classList.add('show');
+        }
+
+        function trackSignalModal() {
+            document.getElementById('signalModal').classList.add('show');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        async function submitTrade() {
+            if (!currentAccount) {
+                alert('Account not loaded');
+                return;
+            }
+
+            const trade = {
+                account_id: currentAccount.id,
+                symbol: currentSymbol,
+                trade_type: document.getElementById('tradeType').value,
+                signal_type: document.getElementById('signalType').value,
+                entry_price: parseFloat(document.getElementById('entryPrice').value),
+                quantity: parseInt(document.getElementById('tradeQuantity').value),
+                stop_loss: parseFloat(document.getElementById('tradeStopLoss').value) || null,
+                take_profit: parseFloat(document.getElementById('tradeTakeProfit').value) || null,
+                signal_description: document.getElementById('tradeDescription').value
+            };
+
+            try {
+                const response = await fetch(`${API}/api/trading/trade/open`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    },
+                    body: JSON.stringify(trade)
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    alert('Trade opened successfully!');
+                    closeModal('tradeModal');
+                    await loadAccount();
+                    loadTrades();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (e) {
+                alert('Failed to open trade: ' + e.message);
+            }
+        }
+
+        async function submitSignal() {
+            const signal = {
+                symbol: currentSymbol,
+                signal_type: document.getElementById('trackSignalType').value,
+                direction: document.getElementById('signalDirection').value,
+                entry_price: parseFloat(document.getElementById('signalEntry').value),
+                target_price: parseFloat(document.getElementById('signalTarget').value),
+                stop_loss: parseFloat(document.getElementById('signalStopLoss').value),
+                description: document.getElementById('signalDescription').value
+            };
+
+            try {
+                const response = await fetch(`${API}/api/trading/signal/track`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    },
+                    body: JSON.stringify(signal)
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    alert('Signal tracked successfully!');
+                    closeModal('signalModal');
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (e) {
+                alert('Failed to track signal: ' + e.message);
+            }
+        }
+
+        async function quickTrade() {
+            if (!currentAccount) return;
+            const entryPrice = parseFloat(document.getElementById('quickEntry').value);
+            if (!entryPrice) {
+                alert('Enter entry price');
+                return;
+            }
+
+            const trade = {
+                account_id: currentAccount.id,
+                symbol: currentSymbol,
+                trade_type: document.getElementById('quickTradeType').value,
+                signal_type: 'TECHNICAL',
+                entry_price: entryPrice,
+                quantity: parseInt(document.getElementById('quickQuantity').value),
+                signal_description: 'Quick trade from dashboard'
+            };
+
+            try {
+                const response = await fetch(`${API}/api/trading/trade/open`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    },
+                    body: JSON.stringify(trade)
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    alert('Trade opened!');
+                    document.getElementById('quickEntry').value = '';
+                    await loadAccount();
+                    loadTrades();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (e) {
+                alert('Failed: ' + e.message);
+            }
+        }
+
+        async function resetAccount() {
+            if (!confirm(`Reset ${currentSymbol} account? This will clear all trades.`)) return;
+
+            try {
+                const response = await fetch(`${API}/api/trading/account/${currentSymbol}/reset`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    alert('Account reset!');
+                    await loadAccount();
+                    loadTrades();
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function updateCapital() {
+            const capital = parseFloat(document.getElementById('capitalInput').value);
+            if (!capital) {
+                alert('Enter valid capital');
+                return;
+            }
+            alert('Capital would be applied to new accounts. Current account: ₹' + currentAccount?.initial_capital);
+        }
+
+        // Close modals on outside click
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('show');
+            }
+        });
+
+        // Start
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

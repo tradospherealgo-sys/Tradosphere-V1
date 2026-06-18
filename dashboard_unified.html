@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradosphere - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0F1419;
+            --sidebar: #1A2332;
+            --card: #252E3E;
+            --border: #374151;
+            --accent: #6366F1;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #E5E7EB;
+            --muted: #9CA3AF;
+            --admin-accent: #8B5CF6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar);
+            border-right: 1px solid var(--border);
+            padding: 30px 20px;
+            overflow-y: auto;
+            height: 100vh;
+            position: fixed;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 30px;
+            cursor: pointer;
+        }
+
+        .logo.admin {
+            color: var(--admin-accent);
+        }
+
+        .admin-badge {
+            display: inline-block;
+            background: var(--admin-accent);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-left: 5px;
+        }
+
+        .user-card {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .user-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        .user-role.admin {
+            color: var(--admin-accent);
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 10px;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 12px 16px;
+            color: var(--muted);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--card);
+            color: var(--accent);
+        }
+
+        .nav-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .nav-section-title {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .nav-item.hidden {
+            display: none;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary.admin {
+            background: var(--admin-accent);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-logout {
+            background: var(--danger);
+            color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
+        }
+
+        .card-title {
+            font-size: 14px;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .card-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .card-subtitle {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .card-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .status-admin {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--admin-accent);
+        }
+
+        /* TABLE */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table tr:hover {
+            background: var(--border);
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .admin-banner {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+            border: 1px solid var(--admin-accent);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .admin-banner h3 {
+            color: var(--admin-accent);
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo" id="logo">🌍 TRADOSPHERE <span class="admin-badge" id="adminBadge" style="display:none;">ADMIN</span></div>
+
+        <div class="user-card">
+            <div class="user-name" id="userName">Loading...</div>
+            <div class="user-role" id="userRole">User</div>
+        </div>
+
+        <!-- USER NAV MENU -->
+        <div id="userNav" style="display:none;">
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a class="nav-link active" onclick="switchSection('user-overview')">📊 Overview</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="switchSection('user-technical')">📈 Technical</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="switchSection('user-options')">📊 Options</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="switchSection('user-signals')">🎯 My Signals</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="switchSection('user-performance')">📊 Performance</a>
+                </li>
+            </ul>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Trading</div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="window.location.href='/trading'" style="color: var(--success);">🚀 Live Paper Trading</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Account</div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchSection('user-subscription')">💳 Subscription</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchSection('user-api-keys')">🔑 API Keys</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchSection('user-settings')">⚙️ Settings</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ADMIN NAV MENU -->
+        <div id="adminNav" style="display:none;">
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a class="nav-link active" onclick="switchSection('admin-overview')">📊 Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="switchSection('admin-users')">👥 Users & Leads</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="switchSection('admin-clients')">💼 Active Clients</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="switchSection('admin-analytics')">📈 Analytics</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="switchSection('admin-revenue')">💰 Revenue</a>
+                </li>
+            </ul>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Management</div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchSection('admin-system')">🔧 System</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <button class="btn btn-logout" onclick="logout()" style="width: 100%;">Logout</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="header">
+            <h1 id="pageTitle">Dashboard</h1>
+            <div class="header-right">
+                <span id="currentTime"></span>
+            </div>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <!-- ===== USER SECTIONS ===== -->
+
+        <!-- USER OVERVIEW -->
+        <div id="user-overview" class="section active">
+            <h2>Your Dashboard</h2>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-title">Current Plan</div>
+                    <div class="card-value" id="userPlan">Pro</div>
+                    <div class="card-status status-active">Active</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Signals This Month</div>
+                    <div class="card-value" id="userSignalsUsed">245</div>
+                    <div class="card-subtitle">of 5000 allowed</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Trading Performance</div>
+                    <div class="card-value" id="userPnL">₹12,450</div>
+                    <div class="card-subtitle">Total P&L</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LIVE MARKET DATA -->
+        <div id="user-overview" class="section">
+            <h2>📊 Live Market Overview</h2>
+            <div class="card" style="padding: 30px; text-align: center;">
+                <div style="font-size: 14px; color: var(--muted); margin-bottom: 10px;">NIFTY 50</div>
+                <div id="liveNiftyPrice" style="font-size: 48px; font-weight: 700; color: var(--accent);">₹ Loading...</div>
+                <div style="font-size: 12px; color: var(--muted); margin-top: 10px;">Last Updated: <span id="lastUpdate">--:--:--</span></div>
+            </div>
+        </div>
+
+        <!-- TECHNICAL ANALYSIS -->
+        <div id="user-technical" class="section">
+            <h2>📈 Technical Analysis</h2>
+            <div id="technicalAnalysisContainer" class="card" style="padding: 20px;">
+                <div style="text-align: center; color: var(--muted); padding: 40px;">Loading technical indicators...</div>
+            </div>
+        </div>
+
+        <!-- OPTIONS ANALYSIS -->
+        <div id="user-options" class="section">
+            <h2>📊 Options Chain Analysis</h2>
+            <div id="optionsAnalysisContainer" class="card" style="padding: 20px;">
+                <div style="text-align: center; color: var(--muted); padding: 40px;">Loading options analysis...</div>
+            </div>
+        </div>
+
+        <!-- USER SIGNALS -->
+        <div id="user-signals" class="section">
+            <h2>My Trading Signals</h2>
+            <button class="btn btn-primary" onclick="generateSignals()" style="margin-bottom: 20px;">🔄 Generate New Signal</button>
+            <div class="card">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Type</th>
+                            <th>Direction</th>
+                            <th>Levels & Quality</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userSignalsTable">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--muted);">Click "Generate New Signal" to get trading signals</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- USER PERFORMANCE -->
+        <div id="user-performance" class="section">
+            <h2>Performance Metrics</h2>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-title">Total Trades</div>
+                    <div class="card-value" id="userTotalTrades">24</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Win Rate</div>
+                    <div class="card-value" id="userWinRate">65%</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Avg Trade Size</div>
+                    <div class="card-value" id="userAvgTrade">₹5,200</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- USER SUBSCRIPTION -->
+        <div id="user-subscription" class="section">
+            <h2>Subscription Management</h2>
+            <div class="card">
+                <h3>Current Plan: <span id="userSubPlan">Pro</span></h3>
+                <p style="margin-top: 20px;">Monthly Cost: <strong>₹99</strong></p>
+                <p>Next Billing: <strong id="nextBillingDate">July 17, 2026</strong></p>
+                <button class="btn btn-primary" onclick="upgradePlan()" style="margin-top: 20px;">Upgrade to Enterprise</button>
+            </div>
+        </div>
+
+        <!-- USER API KEYS -->
+        <div id="user-api-keys" class="section">
+            <h2>API Key Management</h2>
+            <button class="btn btn-primary" onclick="addApiKey()" style="margin-bottom: 20px;">Add API Key</button>
+            <div class="card">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Broker</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userApiKeysTable">
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: var(--muted);">No API keys added</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- USER SETTINGS -->
+        <div id="user-settings" class="section">
+            <h2>Account Settings</h2>
+            <div class="card">
+                <h3>Profile</h3>
+                <form style="margin-top: 20px;">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px;">Name</label>
+                        <input type="text" id="settingName" style="width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text);">
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="updateProfile()">Save Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== ADMIN SECTIONS ===== -->
+
+        <!-- ADMIN OVERVIEW -->
+        <div id="admin-overview" class="section">
+            <div class="admin-banner">
+                <h3>👑 ADMIN DASHBOARD</h3>
+                <p>Manage platform, users, and revenue</p>
+            </div>
+
+            <h2>Platform Statistics</h2>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-title">Total Users</div>
+                    <div class="card-value" id="adminTotalUsers">0</div>
+                    <div class="card-subtitle">Active accounts</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Total Leads</div>
+                    <div class="card-value" id="adminTotalLeads">0</div>
+                    <div class="card-subtitle">All signups</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Paid Customers</div>
+                    <div class="card-value" id="adminPaidCustomers">0</div>
+                    <div class="card-subtitle">Pro + Enterprise</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Monthly Revenue</div>
+                    <div class="card-value" id="adminMRR">₹0</div>
+                    <div class="card-subtitle">Current month</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Conversion Rate</div>
+                    <div class="card-value" id="adminConversionRate">0%</div>
+                    <div class="card-subtitle">Lead to customer</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Total LTV</div>
+                    <div class="card-value" id="adminTotalLTV">₹0</div>
+                    <div class="card-subtitle">Lifetime value</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN USERS & LEADS -->
+        <div id="admin-users" class="section">
+            <h2>Users & Leads Management</h2>
+            <div class="card">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Tier</th>
+                            <th>Joined</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUsersTable">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--muted);">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ADMIN CLIENTS -->
+        <div id="admin-clients" class="section">
+            <h2>Active Paying Clients</h2>
+            <div class="card">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Company</th>
+                            <th>Tier</th>
+                            <th>LTV</th>
+                            <th>Health</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminClientsTable">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--muted);">No paid clients yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ADMIN ANALYTICS -->
+        <div id="admin-analytics" class="section">
+            <h2>Platform Analytics</h2>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-title">Daily Active Users</div>
+                    <div class="card-value" id="adminDAU">0</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Total Signals Generated</div>
+                    <div class="card-value" id="adminTotalSignals">0</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">API Calls This Month</div>
+                    <div class="card-value" id="adminAPICallsMonth">0</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Platform Health</div>
+                    <div class="card-value" style="color: var(--success);">✅ Healthy</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN REVENUE -->
+        <div id="admin-revenue" class="section">
+            <h2>Revenue Tracking</h2>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-title">Monthly Recurring Revenue (MRR)</div>
+                    <div class="card-value" id="adminMRRDetail">₹0</div>
+                    <div class="card-subtitle">Current month</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Annual Run Rate (ARR)</div>
+                    <div class="card-value" id="adminARR">₹0</div>
+                    <div class="card-subtitle">MRR × 12</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Free Customers</div>
+                    <div class="card-value" id="adminFreeCustomers">0</div>
+                    <div class="card-subtitle">Potential upsell</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">At-Risk Customers</div>
+                    <div class="card-value" id="adminAtRisk">0</div>
+                    <div class="card-subtitle">High churn risk</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN SYSTEM -->
+        <div id="admin-system" class="section">
+            <h2>System Management</h2>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-title">Database Status</div>
+                    <div class="card-value" style="color: var(--success);">✅ Connected</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">API Status</div>
+                    <div class="card-value" style="color: var(--success);">✅ Operational</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Angel One Broker</div>
+                    <div class="card-value" style="color: var(--success);">✅ Connected</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Email Service</div>
+                    <div class="card-value" style="color: var(--success);">✅ Configured</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = window.location.origin;
+        let currentUser = {};
+
+        window.addEventListener('load', () => {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            loadUserData();
+            updateClock();
+            setInterval(updateClock, 1000);
+        });
+
+        function updateClock() {
+            document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
+        }
+
+        async function loadUserData() {
+            try {
+                const response = await fetch(`${API}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                });
+
+                const data = response.json();
+                if (response.ok) {
+                    data.then(userData => {
+                        currentUser = userData.data;
+                        displayDashboard();
+                    });
+                } else {
+                    // Token is invalid - clear localStorage to prevent redirect loop
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('refresh_token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                // Token is invalid - clear localStorage to prevent redirect loop
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+            }
+        }
+
+        function displayDashboard() {
+            const isAdmin = currentUser.is_admin;
+            const name = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
+
+            document.getElementById('userName').textContent = name;
+
+            if (isAdmin) {
+                // ADMIN DASHBOARD
+                document.getElementById('logo').classList.add('admin');
+                document.getElementById('adminBadge').style.display = 'inline';
+                document.getElementById('userRole').textContent = 'Admin';
+                document.getElementById('userRole').classList.add('admin');
+                document.getElementById('userNav').style.display = 'none';
+                document.getElementById('adminNav').style.display = 'block';
+
+                switchSection('admin-overview');
+                loadAdminData();
+            } else {
+                // USER DASHBOARD
+                document.getElementById('userRole').textContent = 'User';
+                document.getElementById('userNav').style.display = 'block';
+                document.getElementById('adminNav').style.display = 'none';
+
+                switchSection('user-overview');
+                loadUserDashboardData();
+            }
+        }
+
+        function switchSection(sectionId) {
+            try {
+                // Hide all sections
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+                // Show selected section
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.classList.add('active');
+                }
+
+                // Update nav active state - find the clicked link
+                document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+
+                // Find and highlight the nav link that matches this section
+                const navLink = document.querySelector(`[onclick="switchSection('${sectionId}')"]`);
+                if (navLink) {
+                    navLink.classList.add('active');
+                }
+
+                // Update page title
+                const titles = {
+                    'user-overview': '📊 Live Market Data',
+                    'user-technical': '📈 Technical Analysis',
+                    'user-options': '📊 Options Chain Analysis',
+                    'user-signals': 'My Trading Signals',
+                    'user-performance': 'Performance Metrics',
+                    'user-subscription': 'Subscription Management',
+                    'user-api-keys': 'API Key Management',
+                    'user-settings': 'Account Settings',
+                    'admin-overview': '👑 Admin Dashboard',
+                    'admin-users': 'Users & Leads Management',
+                    'admin-clients': 'Active Paying Clients',
+                    'admin-analytics': 'Platform Analytics',
+                    'admin-revenue': 'Revenue Tracking',
+                    'admin-system': 'System Management'
+                };
+                document.getElementById('pageTitle').textContent = titles[sectionId] || 'Dashboard';
+            } catch (e) {
+                console.error('Error switching section:', e);
+            }
+        }
+
+        async function loadUserDashboardData() {
+            try {
+                const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` };
+
+                // Load subscription
+                const subRes = await fetch(`${API}/api/billing/subscription`, { headers });
+                if (subRes.ok) {
+                    const subData = await subRes.json();
+                    document.getElementById('userPlan').textContent = subData.data.plan_tier || 'Free';
+                    document.getElementById('userSubPlan').textContent = subData.data.plan_tier || 'Free';
+                }
+
+                // Load usage
+                const usageRes = await fetch(`${API}/api/billing/usage`, { headers });
+                if (usageRes.ok) {
+                    const usageData = await usageRes.json();
+                    document.getElementById('userSignalsUsed').textContent = usageData.data.signals_generated;
+                }
+            } catch (error) {
+                console.log('ℹ️ Some data unavailable');
+            }
+        }
+
+        async function loadAdminData() {
+            try {
+                const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` };
+
+                // Load admin overview
+                const overviewRes = await fetch(`${API}/api/admin/analytics/overview`, { headers });
+                if (overviewRes.ok) {
+                    const overviewData = await overviewRes.json();
+                    const stats = overviewData.data;
+
+                    document.getElementById('adminTotalUsers').textContent = stats.users.total;
+                    document.getElementById('adminTotalLeads').textContent = stats.users.total; // Adjust as needed
+                    document.getElementById('adminPaidCustomers').textContent = stats.subscriptions.pro + stats.subscriptions.enterprise;
+                    document.getElementById('adminMRR').textContent = '₹' + (stats.subscriptions.pro * 99 + stats.subscriptions.enterprise * 499);
+                    document.getElementById('adminTotalLTV').textContent = '₹' + stats.revenue.total;
+                }
+
+                // Load users list
+                const usersRes = await fetch(`${API}/api/admin/users?limit=100`, { headers });
+                if (usersRes.ok) {
+                    const usersData = await usersRes.json();
+                    const tbody = document.getElementById('adminUsersTable');
+                    if (usersData.data.length > 0) {
+                        tbody.innerHTML = usersData.data.map(user => `
+                            <tr>
+                                <td>${user.email}</td>
+                                <td><span style="color: var(--success);">✅ Active</span></td>
+                                <td>${user.is_admin ? '👑 Admin' : 'User'}</td>
+                                <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                                <td><button class="btn" style="background: var(--border); color: var(--text); padding: 5px 10px; font-size: 11px;">Manage</button></td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading admin data:', error);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        // ===== MARKET DATA FUNCTIONS =====
+        async function loadMarketData() {
+            try {
+                const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` };
+                const response = await fetch(`${API}/api/market/live`, { headers });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        // Display live prices
+                        const niftyPrice = data.NIFTY || 'N/A';
+                        const bankniftyPrice = data.BANKNIFTY || 'N/A';
+
+                        // Store for use in other functions
+                        window.liveData = { nifty: niftyPrice, banknifty: bankniftyPrice };
+
+                        // Update display if elements exist
+                        const priceEl = document.getElementById('liveNiftyPrice');
+                        if (priceEl) priceEl.textContent = niftyPrice ? '₹' + niftyPrice.toFixed(2) : 'N/A';
+                    }
+                }
+            } catch (error) {
+                console.log('Market data fetch error:', error);
+            }
+        }
+
+        // ===== TECHNICAL ANALYSIS =====
+        async function loadTechnicalAnalysis() {
+            try {
+                const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` };
+                const symbol = 'NIFTY';
+                const interval = '15';
+
+                const response = await fetch(`${API}/api/analysis/technical?symbol=${symbol}&interval=${interval}&limit=100`, { headers });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        window.technicalData = data;
+                        displayTechnicalAnalysis(data);
+                    } else {
+                        displayTechnicalPlaceholder();
+                    }
+                } else {
+                    displayTechnicalPlaceholder();
+                }
+            } catch (error) {
+                console.log('Technical analysis error:', error);
+                displayTechnicalPlaceholder();
+            }
+        }
+
+        function displayTechnicalPlaceholder() {
+            const container = document.getElementById('technicalAnalysisContainer');
+            if (container) {
+                container.innerHTML = '<div style="padding: 20px; background: var(--card); border-radius: 8px; border: 1px solid var(--border); text-align: center;"><p style="color: var(--muted);">📊 Technical indicators loading... (requires historical data)</p><p style="font-size: 12px; color: var(--muted);">System is collecting market data in real-time. Check back in a few minutes.</p></div>';
+            }
+        }
+
+        function displayTechnicalAnalysis(data) {
+            if (!data || data.status !== 'success') return;
+
+            const indicators = data.indicators || {};
+            const macd = data.macd || {};
+            const bb = data.bollinger_bands || {};
+            const ema_cross = data.ema_crossover || {};
+
+            // Build technical analysis display
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">';
+
+            html += `
+                <div style="background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="color: var(--muted); font-size: 11px; text-transform: uppercase;">RSI (14)</div>
+                    <div style="font-size: 20px; font-weight: 700; color: var(--accent);">${indicators.rsi ? indicators.rsi.toFixed(2) : 'N/A'}</div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 5px;">
+                        ${indicators.rsi > 70 ? '⚠️ Overbought' : indicators.rsi < 30 ? '⚠️ Oversold' : '✓ Normal'}
+                    </div>
+                </div>
+
+                <div style="background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="color: var(--muted); font-size: 11px; text-transform: uppercase;">EMA 9/50 Cross</div>
+                    <div style="font-size: 16px; font-weight: 700; color: ${ema_cross.crossover_type === 'BULLISH' ? 'var(--success)' : ema_cross.crossover_type === 'BEARISH' ? 'var(--danger)' : 'var(--muted)'};">
+                        ${ema_cross.crossover || 'No Crossover'}
+                    </div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 5px;">
+                        EMA9: ${ema_cross.ema_fast ? ema_cross.ema_fast.toFixed(2) : 'N/A'} / EMA50: ${ema_cross.ema_slow ? ema_cross.ema_slow.toFixed(2) : 'N/A'}
+                    </div>
+                </div>
+
+                <div style="background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="color: var(--muted); font-size: 11px; text-transform: uppercase;">MACD</div>
+                    <div style="font-size: 20px; font-weight: 700; color: var(--accent);">${macd.macd ? macd.macd.toFixed(4) : 'N/A'}</div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 5px;">Histogram: ${macd.histogram ? macd.histogram.toFixed(4) : 'N/A'}</div>
+                </div>
+
+                <div style="background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="color: var(--muted); font-size: 11px; text-transform: uppercase;">VWAP</div>
+                    <div style="font-size: 20px; font-weight: 700; color: var(--accent);">₹${indicators.vwap ? indicators.vwap.toFixed(2) : 'N/A'}</div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 5px;">
+                        Price ${data.price_vs_indicators?.price_vs_vwap === 'above' ? '↑ Above' : '↓ Below'} VWAP
+                    </div>
+                </div>
+
+                <div style="background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="color: var(--muted); font-size: 11px; text-transform: uppercase;">Bollinger Bands</div>
+                    <div style="font-size: 14px; font-weight: 700;">
+                        U: ${bb.upper_band ? bb.upper_band.toFixed(2) : 'N/A'}<br>
+                        M: ${bb.middle_band ? bb.middle_band.toFixed(2) : 'N/A'}<br>
+                        L: ${bb.lower_band ? bb.lower_band.toFixed(2) : 'N/A'}
+                    </div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 5px;">
+                        Price: ${bb.position || 'N/A'}
+                    </div>
+                </div>
+
+                <div style="background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="color: var(--muted); font-size: 11px; text-transform: uppercase;">Trend / Momentum</div>
+                    <div style="font-size: 16px; font-weight: 700; color: ${data.trend === 'BULLISH' ? 'var(--success)' : data.trend === 'BEARISH' ? 'var(--danger)' : 'var(--muted)'};">
+                        ${data.trend}
+                    </div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 5px;">
+                        ${data.momentum}
+                    </div>
+                </div>
+            `;
+
+            html += '</div>';
+
+            const container = document.getElementById('technicalAnalysisContainer');
+            if (container) container.innerHTML = html;
+        }
+
+        // ===== OPTIONS ANALYSIS =====
+        async function loadOptionsAnalysis() {
+            try {
+                const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` };
+                const symbol = 'NIFTY';
+
+                const response = await fetch(`${API}/api/analysis/options?symbol=${symbol}`, { headers });
+
+                if (!response.ok) {
+                    displayOptionsPlaceholder();
+                    return;
+                }
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        window.optionsData = data;
+                        displayOptionsAnalysis(data);
+                    } else {
+                        displayOptionsPlaceholder();
+                    }
+                }
+            } catch (error) {
+                console.log('Options analysis error:', error);
+                displayOptionsPlaceholder();
+            }
+        }
+
+        function displayOptionsAnalysis(data) {
+            if (!data || data.status !== 'success') return;
+
+            const pcr = data.pcr || 1.0;
+            const support = data.support || 0;
+            const resistance = data.resistance || 0;
+            const max_pain = data.max_pain || 0;
+            const oi_skew = data.oi_skew || 'BALANCED';
+            const bias = data.bias || 'NEUTRAL';
+
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">';
+
+            html += `
+                <div style="background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="color: var(--muted); font-size: 11px; text-transform: uppercase;">PCR Ratio</div>
+                    <div style="font-size: 20px; font-weight: 700; color: var(--accent);">${pcr.toFixed(3)}</div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 5px;">
+                        ${pcr > 1.2 ? '🟢 Strong Bullish' : pcr > 1.0 ? '🟢 Bullish' : pcr < 0.8 ? '🔴 Bearish' : '🟡 Neutral'}
+                    </div>
+                </div>
+
+                <div style="background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="color: var(--muted); font-size: 11px; text-transform: uppercase;">OI Skew</div>
+                    <div style="font-size: 18px; font-weight: 700; color: var(--accent);">${oi_skew}</div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 5px;">
+                        ${oi_skew === 'PUT HEAVY' ? '🟢 Bullish' : oi_skew === 'CALL HEAVY' ? '🔴 Bearish' : '🟡 Balanced'}
+                    </div>
+                </div>
+
+                <div style="background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="color: var(--muted); font-size: 11px; text-transform: uppercase;">Support Level</div>
+                    <div style="font-size: 20px; font-weight: 700; color: var(--success);">₹${support.toFixed(2)}</div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 5px;">From Max PUT OI</div>
+                </div>
+
+                <div style="background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="color: var(--muted); font-size: 11px; text-transform: uppercase;">Resistance Level</div>
+                    <div style="font-size: 20px; font-weight: 700; color: var(--danger);">₹${resistance.toFixed(2)}</div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 5px;">From Max CALL OI</div>
+                </div>
+
+                <div style="background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="color: var(--muted); font-size: 11px; text-transform: uppercase;">Max Pain</div>
+                    <div style="font-size: 20px; font-weight: 700; color: var(--accent);">₹${max_pain.toFixed(2)}</div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 5px;">Most likely close level</div>
+                </div>
+            `;
+
+            html += '</div>';
+
+            const container = document.getElementById('optionsAnalysisContainer');
+            if (container) container.innerHTML = html;
+        }
+
+        function displayOptionsPlaceholder() {
+            const container = document.getElementById('optionsAnalysisContainer');
+            if (container) {
+                container.innerHTML = '<div style="padding: 20px; background: var(--card); border-radius: 8px; border: 1px solid var(--border); text-align: center;"><p style="color: var(--muted);">📊 Options analysis loading... (requires live options data)</p><p style="font-size: 12px; color: var(--muted);">Market hours: 9:15 AM - 3:30 PM IST</p></div>';
+            }
+        }
+
+        // ===== SIGNAL GENERATION =====
+        async function generateSignals() {
+            try {
+                const btn = event.target;
+                btn.disabled = true;
+                btn.textContent = '⏳ Generating...';
+
+                const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` };
+                const response = await fetch(`${API}/api/signals/generate`, {
+                    method: 'POST',
+                    headers: headers
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        displayGeneratedSignals(data.signals || []);
+                        btn.textContent = '✅ Signals Generated!';
+                        setTimeout(() => {
+                            btn.disabled = false;
+                            btn.textContent = '🔄 Generate New Signal';
+                        }, 2000);
+                    } else {
+                        alert('Error: ' + data.message);
+                        btn.disabled = false;
+                        btn.textContent = '🔄 Generate New Signal';
+                    }
+                } else {
+                    alert('Failed to generate signals');
+                    btn.disabled = false;
+                    btn.textContent = '🔄 Generate New Signal';
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                event.target.disabled = false;
+                event.target.textContent = '🔄 Generate New Signal';
+            }
+        }
+
+        function displayGeneratedSignals(signals) {
+            if (!signals || signals.length === 0) {
+                const tbody = document.getElementById('userSignalsTable');
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--muted);">No signals generated. Check market conditions.</td></tr>';
+                }
+                return;
+            }
+
+            const tbody = document.getElementById('userSignalsTable');
+            if (tbody) {
+                tbody.innerHTML = signals.map(signal => `
+                    <tr>
+                        <td><strong>${signal.symbol || 'N/A'}</strong></td>
+                        <td>${signal.signal_type || 'N/A'}</td>
+                        <td>
+                            <span style="color: ${signal.direction === 'BUY' || signal.direction === 'CALL' ? 'var(--success)' : 'var(--danger)'}; font-weight: 600;">
+                                ${signal.direction || 'N/A'}
+                            </span>
+                        </td>
+                        <td>
+                            <div><strong>Entry:</strong> ₹${signal.entry_price ? signal.entry_price.toFixed(2) : 'N/A'}</div>
+                            <div><strong>Target:</strong> ₹${signal.target ? signal.target.toFixed(2) : 'N/A'}</div>
+                            <div><strong>SL:</strong> ₹${signal.stop_loss ? signal.stop_loss.toFixed(2) : 'N/A'}</div>
+                            <div><strong>Quality:</strong> ${signal.quality_score ? signal.quality_score.toFixed(1) + '/100' : 'N/A'}</div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // ===== INIT & AUTO-LOAD =====
+        async function initTradingData() {
+            await loadMarketData();
+            await loadTechnicalAnalysis();
+            await loadOptionsAnalysis();
+
+            // Auto-refresh every 30 seconds
+            setInterval(loadMarketData, 30000);
+        }
+
+        // Call on page load
+        window.addEventListener('load', () => {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.email) {
+                initTradingData();
+            }
+        });
+
+        function upgradePlan() { alert('Upgrade flow - Coming Soon'); }
+        function addApiKey() { alert('Add API key - Coming Soon'); }
+        function updateProfile() { alert('Profile update - Coming Soon'); }
+    </script>
+</body>
+</html>

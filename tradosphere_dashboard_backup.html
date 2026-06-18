@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradosphere - Trading Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --bg: #0F1419; --card: #1A2332; --border: #374151; --accent: #6366F1; --success: #10B981; --danger: #EF4444; --text: #E5E7EB; --muted: #9CA3AF; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+        .container { display: grid; grid-template-columns: 280px 1fr; grid-template-rows: 70px 1fr; height: 100vh; }
+        .header { grid-column: 1 / -1; background: var(--card); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; z-index: 100; }
+        .logo { font-size: 24px; font-weight: 700; color: var(--accent); }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .live-time { font-size: 13px; color: var(--muted); }
+        .generate-btn { background: linear-gradient(135deg, var(--accent), var(--success)); border: none; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.3s; }
+        .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3); }
+        .generate-btn:disabled { opacity: 0.6; }
+        .sidebar { grid-row: 2; background: var(--card); border-right: 1px solid var(--border); padding: 20px 0; overflow-y: auto; }
+        .sidebar-title { padding: 15px 20px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+        .nav-item { padding: 12px 20px; color: var(--muted); cursor: pointer; border-left: 3px solid transparent; transition: all 0.2s; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+        .nav-item:hover { background: rgba(99, 102, 241, 0.1); color: var(--accent); }
+        .nav-item.active { background: rgba(99, 102, 241, 0.15); color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+        .content { grid-row: 2; grid-column: 2; overflow-y: auto; padding: 30px; }
+        .page { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .page-title { font-size: 28px; font-weight: 700; margin-bottom: 30px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 30px; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: all 0.2s; }
+        .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 16px rgba(99, 102, 241, 0.1); }
+        .price-card { text-align: center; }
+        .price-symbol { font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 600; margin-bottom: 10px; }
+        .price-value { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+        .price-change { font-size: 14px; font-weight: 600; }
+        .price-change.up { color: var(--success); }
+        .price-change.down { color: var(--danger); }
+        .metric-title { font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 600; margin-bottom: 8px; }
+        .metric-value { font-size: 24px; font-weight: 700; }
+        .table-wrapper { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        table th { background: rgba(99, 102, 241, 0.1); padding: 12px; text-align: left; font-weight: 600; color: var(--accent); border-bottom: 1px solid var(--border); }
+        table td { padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .signal-badge { display: inline-block; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; text-transform: uppercase; }
+        .signal-buy { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .signal-sell { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .ai-box { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.05)); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .ai-box-title { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+        .ai-box-content { font-size: 13px; line-height: 1.6; color: var(--text); }
+        .chat-container { height: 500px; display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .chat-message { display: flex; gap: 10px; animation: slideIn 0.3s ease-out; }
+        .chat-message.bot { justify-content: flex-start; }
+        .chat-message.user { justify-content: flex-end; }
+        .chat-bubble { max-width: 70%; padding: 12px 16px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
+        .chat-message.bot .chat-bubble { background: var(--border); color: var(--text); }
+        .chat-message.user .chat-bubble { background: var(--accent); color: white; }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        #authStatus { transition: background 0.3s; }
+        #authStatus.connected { background: var(--success); animation: none; }
+        .chat-input-area { border-top: 1px solid var(--border); padding: 15px; display: flex; gap: 10px; }
+        .chat-input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 15px; border-radius: 8px; font-size: 13px; }
+        .chat-input:focus { outline: none; border-color: var(--accent); }
+        .chat-send { background: var(--accent); border: none; color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; }
+        .form-input, .form-select { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 15px; border-radius: 8px; font-size: 13px; }
+        .form-input:focus, .form-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+        .button { background: var(--accent); border: none; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.3s; }
+        .button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 15px 20px; border-radius: 8px; z-index: 1000; animation: slideIn 0.3s ease-out; }
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🌍 TRADOSPHERE</div>
+            <div class="header-right">
+                <div class="live-time" id="liveTime">--:--:--</div>
+                <button class="generate-btn" onclick="generateSignals()"><span id="genText">🚀 Generate Signals</span></button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-title">TRADING</div>
+            <div class="nav-item active" onclick="switchPage('dashboard', this)">📊 Dashboard</div>
+            <div class="nav-item" onclick="switchPage('nifty', this)">📈 NIFTY</div>
+            <div class="nav-item" onclick="switchPage('banknifty', this)">📈 BANKNIFTY</div>
+            <div class="nav-item" onclick="switchPage('options', this)">📊 Options</div>
+            <div class="nav-item" onclick="switchPage('signals', this)">🎯 Signals</div>
+            <div class="nav-item" onclick="switchPage('trades', this)">💹 Trades</div>
+            <div class="nav-item" onclick="switchPage('performance', this)">📈 Performance</div>
+            <div class="sidebar-title">TOOLS</div>
+            <div class="nav-item" onclick="switchPage('chat', this)">💬 Chat</div>
+            <div class="nav-item" onclick="switchPage('admin', this)">⚙️ Admin</div>
+            <div class="nav-item" onclick="switchPage('settings', this)">🔧 Settings</div>
+        </div>
+
+        <div class="content">
+            <!-- DASHBOARD -->
+            <div id="dashboard" class="page active">
+                <div class="page-title">Dashboard</div>
+                <div class="grid-5">
+                    <div class="card price-card"><div class="price-symbol">NIFTY</div><div class="price-value" id="dashNifty">--</div><div class="price-change up" id="dashNiftyChg">--</div></div>
+                    <div class="card price-card"><div class="price-symbol">BANKNIFTY</div><div class="price-value" id="dashBank">--</div><div class="price-change up" id="dashBankChg">--</div></div>
+                    <div class="card price-card"><div class="price-symbol">FINNIFTY</div><div class="price-value" id="dashFin">--</div><div class="price-change up" id="dashFinChg">--</div></div>
+                    <div class="card price-card"><div class="price-symbol">VIX</div><div class="price-value" id="dashVix">--</div><div class="price-change" id="dashVixChg">--</div></div>
+                    <div class="card price-card"><div class="price-symbol">SENSEX</div><div class="price-value" id="dashSensex">--</div><div class="price-change up" id="dashSensexChg">--</div></div>
+                </div>
+                <div class="grid-3">
+                    <div class="card"><div class="metric-title">Win Rate</div><div class="metric-value" id="dashWin">--</div></div>
+                    <div class="card"><div class="metric-title">Total P&L</div><div class="metric-value" id="dashPnl">--</div></div>
+                    <div class="card"><div class="metric-title">Signals</div><div class="metric-value" id="dashSigs">--</div></div>
+                </div>
+                <div class="card">
+                    <div style="margin-bottom: 20px; font-weight: 600;">Latest Signals</div>
+                    <div class="table-wrapper"><table><thead><tr><th>Symbol</th><th>Action</th><th>Entry</th><th>SL</th><th>Target</th><th>Confidence</th><th>Time</th></tr></thead><tbody id="dashSigs Tbody"><tr><td colspan="7" style="text-align: center;">Loading...</td></tr></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- NIFTY -->
+            <div id="nifty" class="page">
+                <div class="page-title">NIFTY 50</div>
+                <div class="grid-2">
+                    <div class="card price-card"><div class="price-symbol">Price</div><div class="price-value" id="nifPrice">--</div><div class="price-change up" id="nifChange">--</div></div>
+                    <div class="card"><div style="margin-bottom: 10px; font-weight: 600;">Details</div><div style="font-size: 12px;"><div><span class="metric-title">Bid:</span> <span id="nifBid">--</span></div><div><span class="metric-title">Ask:</span> <span id="nifAsk">--</span></div><div><span class="metric-title">High:</span> <span id="nifHigh">--</span></div><div><span class="metric-title">Low:</span> <span id="nifLow">--</span></div></div></div>
+                </div>
+                <div class="card"><canvas id="nifChart"></canvas></div>
+                <div class="card"><div style="margin-bottom: 20px; font-weight: 600;">Options (Top 5)</div><div class="table-wrapper"><table><thead><tr><th>Call OI</th><th>Call LTP</th><th>Strike</th><th>Put LTP</th><th>Put OI</th></tr></thead><tbody id="nifOpts"><tr><td colspan="5">Loading...</td></tr></tbody></table></div></div>
+            </div>
+
+            <!-- BANKNIFTY -->
+            <div id="banknifty" class="page">
+                <div class="page-title">BANK NIFTY</div>
+                <div class="grid-2">
+                    <div class="card price-card"><div class="price-symbol">Price</div><div class="price-value" id="bnfPrice">--</div><div class="price-change up" id="bnfChange">--</div></div>
+                    <div class="card"><div style="margin-bottom: 10px; font-weight: 600;">Details</div><div style="font-size: 12px;"><div><span class="metric-title">Bid:</span> <span id="bnfBid">--</span></div><div><span class="metric-title">Ask:</span> <span id="bnfAsk">--</span></div><div><span class="metric-title">High:</span> <span id="bnfHigh">--</span></div><div><span class="metric-title">Low:</span> <span id="bnfLow">--</span></div></div></div>
+                </div>
+                <div class="card"><canvas id="bnfChart"></canvas></div>
+                <div class="card"><div style="margin-bottom: 20px; font-weight: 600;">Options (Top 5)</div><div class="table-wrapper"><table><thead><tr><th>Call OI</th><th>Call LTP</th><th>Strike</th><th>Put LTP</th><th>Put OI</th></tr></thead><tbody id="bnfOpts"><tr><td colspan="5">Loading...</td></tr></tbody></table></div></div>
+            </div>
+
+            <!-- OPTIONS -->
+            <div id="options" class="page">
+                <div class="page-title">Options Chain Analysis</div>
+                <div class="ai-box"><div class="ai-box-title">🤖 AI Insight</div><div class="ai-box-content" id="aiInsight">Analyzing market conditions...</div></div>
+                <div class="grid-2">
+                    <div class="card"><div class="metric-title">Market Sentiment</div><div style="font-size: 48px; color: var(--accent); margin: 20px 0;" id="sentimentGauge">63%</div><div style="font-size: 14px; text-align: center; color: var(--success);" id="sentimentLabel">BULLISH</div></div>
+                    <div class="card"><div class="metric-title">PCR Analysis</div><div style="margin-top: 15px;"><div style="margin-bottom: 20px;"><div style="font-size: 12px; color: var(--muted);">NIFTY PCR</div><div style="font-size: 20px; font-weight: 700; color: var(--accent);" id="nifPcr">--</div></div><div><div style="font-size: 12px; color: var(--muted);">BANKNIFTY PCR</div><div style="font-size: 20px; font-weight: 700; color: var(--accent);" id="bnfPcr">--</div></div></div></div>
+                </div>
+                <div class="card"><div style="margin-bottom: 20px; font-weight: 600;">NIFTY Option Chain</div><div class="table-wrapper"><table><thead><tr><th>Call OI</th><th>Call LTP</th><th>Strike</th><th>Put LTP</th><th>Put OI</th></tr></thead><tbody id="fullNifOpts"><tr><td colspan="5">Loading...</td></tr></tbody></table></div></div>
+                <div class="card"><div style="margin-bottom: 20px; font-weight: 600;">BANKNIFTY Option Chain</div><div class="table-wrapper"><table><thead><tr><th>Call OI</th><th>Call LTP</th><th>Strike</th><th>Put LTP</th><th>Put OI</th></tr></thead><tbody id="fullBnfOpts"><tr><td colspan="5">Loading...</td></tr></tbody></table></div></div>
+            </div>
+
+            <!-- SIGNALS -->
+            <div id="signals" class="page">
+                <div class="page-title">All Signals</div>
+                <div class="card"><div class="table-wrapper"><table><thead><tr><th>ID</th><th>Symbol</th><th>Action</th><th>Entry</th><th>SL</th><th>Target</th><th>Conf</th><th>Status</th><th>Time</th></tr></thead><tbody id="allSigs"><tr><td colspan="9">Loading...</td></tr></tbody></table></div></div>
+            </div>
+
+            <!-- TRADES -->
+            <div id="trades" class="page">
+                <div class="page-title">Trade History</div>
+                <div class="card"><div class="table-wrapper"><table><thead><tr><th>ID</th><th>Signal</th><th>Entry</th><th>Exit</th><th>P&L</th><th>Result</th><th>Time</th></tr></thead><tbody id="allTrades"><tr><td colspan="7">No trades yet</td></tr></tbody></table></div></div>
+            </div>
+
+            <!-- PERFORMANCE -->
+            <div id="performance" class="page">
+                <div class="page-title">Performance</div>
+                <div class="grid-3">
+                    <div class="card"><div class="metric-title">Total Signals</div><div class="metric-value" id="perfSigs">--</div></div>
+                    <div class="card"><div class="metric-title">Win Rate</div><div class="metric-value" id="perfRate">--</div></div>
+                    <div class="card"><div class="metric-title">Total P&L</div><div class="metric-value" id="perfPnl">--</div></div>
+                </div>
+                <div class="grid-2">
+                    <div class="card"><canvas id="pnlChart"></canvas></div>
+                    <div class="card"><canvas id="resultChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- CHAT -->
+            <div id="chat" class="page">
+                <div class="page-title">Chat Bot</div>
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMsgs">
+                        <div class="chat-message bot"><div class="chat-bubble">👋 Hi! I'm your trading assistant. Ask me anything about signals or markets!</div></div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" class="chat-input" id="chatInput" placeholder="Ask about signals..." onkeypress="if(event.key==='Enter') sendMsg()">
+                        <button class="chat-send" onclick="sendMsg()">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN -->
+            <div id="admin" class="page">
+                <div class="page-title">Admin Panel</div>
+                <div class="grid-2">
+                    <div class="card">
+                        <div style="margin-bottom: 15px; font-weight: 600;">System Status</div>
+                        <div style="font-size: 13px;">
+                            <div style="padding: 8px 0;"><span>API:</span> <span style="color: var(--success);">● Online</span></div>
+                            <div style="padding: 8px 0;"><span>Database:</span> <span style="color: var(--success);">● Connected</span></div>
+                            <div style="padding: 8px 0;"><span>Generator:</span> <span style="color: var(--success);">● Running</span></div>
+                            <div style="padding: 8px 0;"><span>Angel One:</span> <span style="color: var(--success);">● Connected</span></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div style="margin-bottom: 15px; font-weight: 600;">Stats</div>
+                        <div style="font-size: 13px;">
+                            <div style="padding: 8px 0;"><span>Active Users:</span> <strong>1</strong></div>
+                            <div style="padding: 8px 0;"><span>Total Signals:</span> <strong id="adminSigs">--</strong></div>
+                            <div style="padding: 8px 0;"><span>Uptime:</span> <strong>99.8%</strong></div>
+                            <div style="padding: 8px 0;"><span>Memory:</span> <strong>45%</strong></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div style="margin-bottom: 20px; font-weight: 600;">Recent Logs</div>
+                    <div style="font-size: 12px; background: var(--bg); padding: 15px; border-radius: 8px; max-height: 150px; overflow-y: auto;">
+                        <div style="color: var(--success); margin-bottom: 8px;">✓ Signals generated successfully</div>
+                        <div style="color: var(--success); margin-bottom: 8px;">✓ Market data refreshed</div>
+                        <div style="color: var(--success); margin-bottom: 8px;">✓ Dashboard updated</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS -->
+            <div id="settings" class="page">
+                <div class="page-title">⚙️ Settings & Configuration</div>
+
+                <div class="card">
+                    <div style="margin-bottom: 20px; font-weight: 600;">🔐 Angel One API Credentials</div>
+                    <div style="background: rgba(99, 102, 241, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 3px solid var(--accent);">
+                        <div style="font-size: 12px; color: var(--muted); margin-bottom: 5px;">Connection Status:</div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div id="authStatus" style="width: 12px; height: 12px; background: var(--danger); border-radius: 50%; animation: pulse 2s infinite;"></div>
+                            <span id="authStatusText" style="font-weight: 600;">Not Connected</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Angel One API Key</label>
+                        <input type="password" id="apiKey" class="form-input" placeholder="Enter your API Key from Angel One dashboard">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API Secret</label>
+                        <input type="password" id="apiSecret" class="form-input" placeholder="Enter your API Secret">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Client Code</label>
+                        <input type="text" id="clientCode" class="form-input" placeholder="Enter your trading account client code">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">OTP/TOTP (Optional - only if 2FA enabled)</label>
+                        <input type="text" id="otpCode" class="form-input" placeholder="6-digit OTP code (or leave blank if 2FA not enabled)" maxlength="6">
+                        <div style="font-size: 11px; color: var(--muted); margin-top: 5px;">
+                            💡 Only needed if you have 2FA enabled. Get it from: Google Authenticator / Authy
+                        </div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--muted); margin-bottom: 15px;">
+                        📝 Get credentials from: <a href="https://smartapi.angelbroking.com/" target="_blank" style="color: var(--accent); text-decoration: none;">smartapi.angelbroking.com</a>
+                    </div>
+                    <button class="button" onclick="saveSetting()" id="saveBtn">💾 Connect & Save</button>
+                    <div id="saveStatus" style="margin-top: 10px; font-size: 12px; display: none;"></div>
+                </div>
+
+                <div class="card">
+                    <div style="margin-bottom: 20px; font-weight: 600;">⚙️ Preferences</div>
+                    <div class="form-group"><label class="form-label">Theme</label><select class="form-select"><option>Dark Mode</option><option>Light Mode</option></select></div>
+                    <div class="form-group"><label class="form-label">Refresh Interval</label><select class="form-select"><option>10 seconds</option><option>30 seconds</option><option>1 minute</option></select></div>
+                    <div class="form-group"><label class="form-label">Notifications</label><select class="form-select"><option>All Alerts</option><option>Important Only</option><option>Disabled</option></select></div>
+                </div>
+
+                <div class="card">
+                    <div style="margin-bottom: 20px; font-weight: 600;">📊 System Info</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 12px;">
+                        <div><span style="color: var(--muted);">Dashboard Version:</span> <span style="color: var(--success); font-weight: 600;">2.0</span></div>
+                        <div><span style="color: var(--muted);">API Endpoint:</span> <span style="color: var(--text);" id="apiEndpoint">http://localhost:8000</span></div>
+                        <div><span style="color: var(--muted);">Server Status:</span> <span style="color: var(--success); font-weight: 600;" id="serverStatus">Checking...</span></div>
+                        <div><span style="color: var(--muted);">Database:</span> <span style="color: var(--success); font-weight: 600;">Connected</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = window.location.origin;
+        let charts = {};
+
+        function switchPage(id, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (el) el.classList.add('active');
+        }
+
+        function fmt(n) { return n ? Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '--'; }
+
+        function toast(msg) {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        function updateLiveTime() {
+            document.getElementById('liveTime').textContent = new Date().toLocaleTimeString('en-IN');
+        }
+        setInterval(updateLiveTime, 1000);
+        updateLiveTime();
+
+        async function refreshData() {
+            try {
+                const prices = await Promise.all([
+                    fetch(`${API}/api/nifty/price`).then(r => r.json()),
+                    fetch(`${API}/api/banknifty/price`).then(r => r.json()),
+                    fetch(`${API}/api/signals/latest`).then(r => r.json()),
+                    fetch(`${API}/api/performance/metrics`).then(r => r.json()),
+                    fetch(`${API}/api/nifty/option-chain`).then(r => r.json()),
+                    fetch(`${API}/api/banknifty/option-chain`).then(r => r.json()),
+                    fetch(`${API}/api/nifty/chart`).then(r => r.json()),
+                    fetch(`${API}/api/banknifty/chart`).then(r => r.json())
+                ]);
+
+                if (prices[0].data) updatePrices('nif', prices[0].data);
+                if (prices[1].data) updatePrices('bnf', prices[1].data);
+                if (prices[2].data) updateSignals(prices[2].data);
+                if (prices[3].data) updateMetrics(prices[3].data);
+                if (prices[4].data) updateOpts('nif', prices[4].data);
+                if (prices[5].data) updateOpts('bnf', prices[5].data);
+                if (prices[6].data) drawChart('nif', prices[6].data);
+                if (prices[7].data) drawChart('bnf', prices[7].data);
+            } catch (e) {
+                console.log('Fetch error:', e);
+            }
+        }
+
+        function updatePrices(sym, data) {
+            const chg = data.change || 0;
+            const cls = chg >= 0 ? 'up' : 'down';
+            if (sym === 'nif') {
+                document.getElementById('dashNifty').textContent = fmt(data.ltp);
+                document.getElementById('dashNiftyChg').textContent = `${chg > 0 ? '+' : ''}${fmt(chg)}`;
+                document.getElementById('dashNiftyChg').className = `price-change ${cls}`;
+                document.getElementById('nifPrice').textContent = fmt(data.ltp);
+                document.getElementById('nifChange').textContent = `${chg > 0 ? '+' : ''}${fmt(chg)}`;
+                document.getElementById('nifBid').textContent = fmt(data.bid);
+                document.getElementById('nifAsk').textContent = fmt(data.ask);
+                document.getElementById('nifHigh').textContent = fmt(data.high);
+                document.getElementById('nifLow').textContent = fmt(data.low);
+            } else {
+                document.getElementById('dashBank').textContent = fmt(data.ltp);
+                document.getElementById('dashBankChg').textContent = `${chg > 0 ? '+' : ''}${fmt(chg)}`;
+                document.getElementById('dashBankChg').className = `price-change ${cls}`;
+                document.getElementById('bnfPrice').textContent = fmt(data.ltp);
+                document.getElementById('bnfChange').textContent = `${chg > 0 ? '+' : ''}${fmt(chg)}`;
+                document.getElementById('bnfBid').textContent = fmt(data.bid);
+                document.getElementById('bnfAsk').textContent = fmt(data.ask);
+                document.getElementById('bnfHigh').textContent = fmt(data.high);
+                document.getElementById('bnfLow').textContent = fmt(data.low);
+            }
+        }
+
+        function updateSignals(data) {
+            const html = data.slice(0, 5).map(s => `<tr><td>${s.symbol}</td><td><span class="signal-badge signal-${s.verdict.toLowerCase()}">${s.verdict}</span></td><td>${fmt(s.entry)}</td><td>${fmt(s.sl)}</td><td>${fmt(s.target)}</td><td>${s.confidence}%</td><td>${new Date(s.timestamp).toLocaleTimeString()}</td></tr>`).join('');
+            document.getElementById('dashSigs Tbody').innerHTML = html || '<tr><td colspan="7">No signals</td></tr>';
+            
+            const allHtml = data.map(s => `<tr><td>${s.id}</td><td>${s.symbol}</td><td><span class="signal-badge signal-${s.verdict.toLowerCase()}">${s.verdict}</span></td><td>${fmt(s.entry)}</td><td>${fmt(s.sl)}</td><td>${fmt(s.target)}</td><td>${s.confidence}%</td><td>${s.status}</td><td>${new Date(s.timestamp).toLocaleTimeString()}</td></tr>`).join('');
+            document.getElementById('allSigs').innerHTML = allHtml || '<tr><td colspan="9">No signals</td></tr>';
+        }
+
+        function updateMetrics(data) {
+            document.getElementById('dashWin').textContent = `${data.win_rate}%`;
+            document.getElementById('dashPnl').textContent = fmt(data.total_pnl);
+            document.getElementById('dashSigs').textContent = data.total_signals;
+            document.getElementById('perfSigs').textContent = data.total_signals;
+            document.getElementById('perfRate').textContent = `${data.win_rate}%`;
+            document.getElementById('perfPnl').textContent = fmt(data.total_pnl);
+            document.getElementById('adminSigs').textContent = data.total_signals;
+        }
+
+        function updateOpts(sym, data) {
+            if (!data.calls || !data.puts) return;
+            const rows = Math.min(5, data.calls.length);
+            const html = Array(rows).fill(0).map((_, i) => `<tr><td>${fmt(data.calls[i].oi)}</td><td>${fmt(data.calls[i].ltp)}</td><td style="font-weight: 600; color: var(--accent);">${data.calls[i].strike}</td><td>${fmt(data.puts[i].ltp)}</td><td>${fmt(data.puts[i].oi)}</td></tr>`).join('');
+            if (sym === 'nif') {
+                document.getElementById('nifOpts').innerHTML = html;
+                document.getElementById('fullNifOpts').innerHTML = html;
+                document.getElementById('nifPcr').textContent = fmt(data.pcr);
+            } else {
+                document.getElementById('bnfOpts').innerHTML = html;
+                document.getElementById('fullBnfOpts').innerHTML = html;
+                document.getElementById('bnfPcr').textContent = fmt(data.pcr);
+            }
+        }
+
+        function drawChart(sym, data) {
+            if (!data.candles || data.candles.length === 0) return;
+            const ctx = document.getElementById(sym === 'nif' ? 'nifChart' : 'bnfChart');
+            if (!ctx) return;
+            
+            if (charts[sym]) charts[sym].destroy();
+            charts[sym] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.candles.map(c => c.time),
+                    datasets: [{
+                        label: 'Price',
+                        data: data.candles.map(c => c.close),
+                        borderColor: 'var(--accent)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { ticks: { color: 'var(--muted)' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: 'var(--muted)' }, grid: { display: false } } }
+                }
+            });
+        }
+
+        async function generateSignals() {
+            const btn = document.querySelector('.generate-btn');
+            btn.disabled = true;
+            document.getElementById('genText').innerHTML = '<span class="loading"></span>Generating...';
+            try {
+                const res = await fetch(`${API}/api/signals/generate`, { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    toast('✅ Signals generated!');
+                    setTimeout(refreshData, 500);
+                }
+            } catch (e) {
+                toast('❌ Error');
+            }
+            btn.disabled = false;
+            document.getElementById('genText').innerHTML = '🚀 Generate Signals';
+        }
+
+        function sendMsg() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+            const msgs = document.getElementById('chatMsgs');
+            msgs.innerHTML += `<div class="chat-message user"><div class="chat-bubble">${msg}</div></div>`;
+            input.value = '';
+            msgs.scrollTop = msgs.scrollHeight;
+            setTimeout(() => {
+                const replies = ['📊 Strong bullish bias detected!', '⚠️ Watch the 23000 support level', '✅ PCR indicates buying opportunity', '💡 Consider trailing your stops', '🎯 Target achieved on NIFTY!'];
+                const reply = replies[Math.floor(Math.random() * replies.length)];
+                msgs.innerHTML += `<div class="chat-message bot"><div class="chat-bubble">${reply}</div></div>`;
+                msgs.scrollTop = msgs.scrollHeight;
+            }, 300);
+        }
+
+        async function saveSetting() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const apiSecret = document.getElementById('apiSecret').value.trim();
+            const clientCode = document.getElementById('clientCode').value.trim();
+            const otpCode = document.getElementById('otpCode').value.trim();
+            const saveBtn = document.getElementById('saveBtn');
+            const saveStatus = document.getElementById('saveStatus');
+
+            // Prevent saving masked values
+            if (apiKey.includes('*') || apiSecret.includes('*')) {
+                saveStatus.style.display = 'block';
+                saveStatus.textContent = '❌ Clear masked values! Paste fresh credentials (not masked values)';
+                saveStatus.style.color = 'var(--danger)';
+                return;
+            }
+
+            if (!apiKey || !apiSecret || !clientCode) {
+                saveStatus.style.display = 'block';
+                saveStatus.textContent = '❌ Please fill all fields with actual credentials';
+                saveStatus.style.color = 'var(--danger)';
+                return;
+            }
+
+            // Check OTP format if provided
+            if (otpCode && otpCode.length !== 6) {
+                saveStatus.style.display = 'block';
+                saveStatus.textContent = '❌ OTP must be 6 digits (or leave blank if not using 2FA)';
+                saveStatus.style.color = 'var(--danger)';
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = '⏳ Connecting...';
+            saveStatus.style.display = 'block';
+            saveStatus.textContent = '🔄 Authenticating with Angel One API...';
+            saveStatus.style.color = 'var(--muted)';
+
+            try {
+                const response = await fetch(`${API}/api/settings/credentials`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api_key: apiKey,
+                        api_secret: apiSecret,
+                        client_code: clientCode,
+                        totp: otpCode || "000000"
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success') {
+                    saveStatus.textContent = '✅ ' + data.message;
+                    saveStatus.style.color = 'var(--success)';
+                    saveBtn.textContent = '✅ Connected';
+
+                    // Update auth status indicator
+                    const authStatus = document.getElementById('authStatus');
+                    const authStatusText = document.getElementById('authStatusText');
+                    if (data.authenticated) {
+                        authStatus.classList.add('connected');
+                        authStatusText.textContent = '🟢 Connected to Angel One API';
+                        authStatusText.style.color = 'var(--success)';
+                    }
+
+                    // Refresh data with new credentials
+                    setTimeout(() => {
+                        refreshData();
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = '💾 Connect & Save';
+                    }, 2000);
+                } else {
+                    saveStatus.textContent = '⚠️ ' + (data.message || 'Connection failed');
+                    saveStatus.style.color = 'var(--danger)';
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = '💾 Connect & Save';
+                }
+            } catch (e) {
+                saveStatus.textContent = '❌ Error: ' + e.message;
+                saveStatus.style.color = 'var(--danger)';
+                saveBtn.disabled = false;
+                saveBtn.textContent = '💾 Connect & Save';
+            }
+        }
+
+        async function loadSettings() {
+            try {
+                const response = await fetch(`${API}/api/settings/credentials`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    const authStatus = document.getElementById('authStatus');
+                    const authStatusText = document.getElementById('authStatusText');
+
+                    if (data.data.authenticated) {
+                        authStatus.classList.add('connected');
+                        authStatusText.textContent = '🟢 Connected to Angel One API';
+                        authStatusText.style.color = 'var(--success)';
+                    } else if (data.data.api_key_set) {
+                        authStatusText.textContent = '🟡 Credentials saved. Re-enter fresh credentials to authenticate.';
+                        authStatusText.style.color = '#FCD34D';
+
+                        // Show hint that we have credentials but need to re-enter them
+                        document.getElementById('apiKey').placeholder = '⚠️ Re-enter your ACTUAL API Key (not masked)';
+                        document.getElementById('apiSecret').placeholder = '⚠️ Re-enter your ACTUAL API Secret (not masked)';
+                    }
+
+                    // Show client code if we have it (can't mask this as it's not sensitive)
+                    if (data.data.client_code) {
+                        document.getElementById('clientCode').value = data.data.client_code;
+                    }
+                }
+            } catch (e) {
+                console.log('Settings load error:', e);
+            }
+        }
+
+        refreshData();
+        loadSettings();
+        setInterval(refreshData, 10000);
+    </script>
+</body>
+</html>

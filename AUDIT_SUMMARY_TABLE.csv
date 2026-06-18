@@ -1,0 +1,13 @@
+Module,Data Source,Live or Simulated,Production Ready (Yes/No),Key Notes
+market_data.py - Prices,Angel One SmartAPI ltpData(),LIVE,YES,Real-time NIFTY/BANKNIFTY prices via official SDK
+market_data.py - Candles,Market snapshots (live) + fallback generation,HYBRID,PARTIAL,Built from real snapshots; fallback to generated test candles
+market_data.py - Option Chains,_generate_option_chain() with random values,SIMULATED,NO,NOT calling Angel One option chain API; using generated PCR/OI/volume
+technical_engine.py,Candle data input (pure calculation),N/A,YES,Standard RSI/EMA/VWAP/trend/momentum calculations; production-ready math
+options_engine.py,Option chain data input (pure calculation),N/A,YES,Standard PCR/OI/support-resistance calculations; production-ready math
+ai_engine.py,Technical + Options engine outputs,DERIVED,PARTIAL,Rule-based market summary; hardcoded bias thresholds; not ML
+signal_writer.py,Integrated: Technical + Options + AI,LIVE (aggregated),YES,100-point quality scoring; professional signal format; multi-factor analysis
+learning_engine.py,Signal/Trade table from database,LIVE HISTORICAL,YES,Real performance metrics; win rate/P&L/setup analysis from actual signals
+database.py,ORM layer (no data source),N/A,YES,SQLAlchemy models; SQLite/PostgreSQL support; production-grade schema
+tradosphere_server.py,All above modules via REST API,LIVE,YES,25+ endpoints; comprehensive API; Flask with CORS; proper error handling
+tradosphere_dashboard_final.html,API endpoints (REST calls),LIVE,YES,10 pages; 15-second auto-refresh; real-time display of all metrics
+test files (*.py),Various test/debug utilities,N/A,N/A,Not production code; testing and debugging only
