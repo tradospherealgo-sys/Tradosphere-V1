@@ -1,5 +1,8 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "buildCommand": "pip install -r requirements.txt"
+  },
   "deploy": {
     "startCommand": "gunicorn --workers 4 --bind 0.0.0.0:$PORT tradosphere_saas_server:app",
     "restartPolicyType": "on_failure",
