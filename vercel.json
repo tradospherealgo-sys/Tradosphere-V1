@@ -2,13 +2,6 @@
   "version": 2,
   "buildCommand": "echo 'Frontend static files ready'",
   "outputDirectory": ".",
-  "env": {
-    "VITE_API_URL": {
-      "description": "Backend API URL (Railway deployment URL)",
-      "required": false,
-      "example": "https://tradosphere-production.up.railway.app"
-    }
-  },
   "routes": [
     {
       "src": "/(.*)",
