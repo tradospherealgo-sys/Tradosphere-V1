@@ -1,0 +1,42 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "dockerfile",
+    "buildCommand": "pip install -r requirements.txt"
+  },
+  "deploy": {
+    "startCommand": "gunicorn --workers 4 --bind 0.0.0.0:$PORT tradosphere_saas_server:app",
+    "restartPolicyType": "on_failure",
+    "restartPolicyMaxRetries": 5
+  },
+  "variables": {
+    "FLASK_ENV": {
+      "description": "Flask environment (development/production)",
+      "value": "production"
+    },
+    "FLASK_SECRET_KEY": {
+      "description": "Flask secret key for session management",
+      "value": ""
+    },
+    "ANGEL_ONE_API_KEY": {
+      "description": "Angel One API Key from SmartAPI",
+      "value": ""
+    },
+    "ANGEL_ONE_CLIENT_CODE": {
+      "description": "Angel One Client Code",
+      "value": ""
+    },
+    "ANGEL_ONE_PIN": {
+      "description": "Angel One PIN",
+      "value": ""
+    },
+    "ANGEL_ONE_TOTP_SECRET": {
+      "description": "Angel One TOTP Secret",
+      "value": ""
+    },
+    "DATABASE_URL": {
+      "description": "Database URL (SQLite for demo, PostgreSQL for production)",
+      "value": "sqlite:///tradosphere.db"
+    }
+  }
+}

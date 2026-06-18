@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "public": false,
+  "buildCommand": "echo 'Frontend static files ready'",
+  "outputDirectory": "public",
+  "env": {
+    "VITE_API_URL": {
+      "description": "Backend API URL (Railway deployment URL)",
+      "required": true,
+      "example": "https://tradosphere-production.up.railway.app"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "dashboard_live.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-CSRF-Token,X-Requested-With,Accept,Accept-Version,Content-Length,Content-MD5,Content-Type,Date,X-Api-Version,Authorization"
+        }
+      ]
+    }
+  ]
+}
