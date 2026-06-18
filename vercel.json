@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "public": false,
   "buildCommand": "echo 'Frontend static files ready'",
   "outputDirectory": ".",
   "env": {
