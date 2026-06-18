@@ -1,0 +1,10 @@
+requirements.txt
+requirements_debug.txt
+*.py
+Procfile
+runtime.txt
+railway.json
+.env
+.env.example
+.git
+.gitignore
