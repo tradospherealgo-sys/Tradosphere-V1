@@ -1,16 +1,26 @@
 """
 Market Data Module - Angel One SmartAPI SDK Integration
-Production-ready authentication and live market data
+Production-ready authentication, token refresh, and live market data
+Enhanced for 24x7 operation with automatic token refresh
 """
 
 import os
 import pyotp
+import logging
 from SmartApi import SmartConnect
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Optional
+from apscheduler.schedulers.background import BackgroundScheduler
 
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 class AngelOneMarketData:
     """
@@ -28,15 +38,16 @@ class AngelOneMarketData:
     }
 
     def __init__(self, api_key: str = None, client_code: str = None,
-                 pin: str = None, totp_secret: str = None):
+                 pin: str = None, totp_secret: str = None, enable_auto_refresh: bool = True):
         """
-        Initialize Angel One market data connection
+        Initialize Angel One market data connection with auto-refresh capability
 
         Args:
             api_key: Angel One API Key
             client_code: Angel One Client Code
             pin: Angel One PIN/Password
             totp_secret: TOTP secret key (32 chars) - auto-generates 6-digit code
+            enable_auto_refresh: Enable automatic token refresh (default: True for 24x7)
         """
         # Load from env if not provided
         self.api_key = api_key or os.getenv("ANGEL_ONE_API_KEY", "")
@@ -49,15 +60,22 @@ class AngelOneMarketData:
         self.refresh_token = None
         self.feed_token = None
         self.client_name = None
+        self.token_created_at = None
+        self.token_refreshed_count = 0
 
         # SmartConnect instance
         self.smart = None
+
+        # Token refresh scheduler
+        self.scheduler = None
+        self.enable_auto_refresh = enable_auto_refresh
 
         print("\n" + "="*70)
         print("🚀 TRADOSPHERE - ANGEL ONE SmartAPI INTEGRATION")
         print("="*70)
         print(f"📍 Client Code: {self.client_code}")
         print(f"📍 API Key: {self.api_key[:8]}...{self.api_key[-2:]}")
+        print(f"🔄 Auto-Refresh: {'ENABLED' if enable_auto_refresh else 'DISABLED'}")
 
         # Initialize and authenticate
         self._initialize()
@@ -66,6 +84,12 @@ class AngelOneMarketData:
             print("\n✅ AUTHENTICATION SUCCESSFUL!")
             print(f"📝 Account: {self.client_name}")
             print(f"🔑 JWT Token: {self.jwt_token[:50]}...")
+            print(f"⏰ Token Created: {self.token_created_at}")
+
+            # Start auto-refresh scheduler if enabled
+            if enable_auto_refresh:
+                self._start_token_refresh_scheduler()
+
             print("="*70 + "\n")
         else:
             print("\n❌ AUTHENTICATION FAILED!")
@@ -121,11 +145,16 @@ class AngelOneMarketData:
                 print("   ❌ No JWT token received")
                 return False
 
+            # Record token creation time
+            self.token_created_at = datetime.now()
+
             print(f"   ✅ Tokens received")
             print(f"   ✅ Account: {self.client_name}")
+            logger.info(f"✅ Angel One authentication successful for {self.client_name}")
             return True
 
         except Exception as e:
+            logger.error(f"Authentication error: {str(e)}")
             print(f"   ❌ Error: {str(e)}")
             return False
 
@@ -137,11 +166,107 @@ class AngelOneMarketData:
             totp = pyotp.TOTP(self.totp_secret)
             return totp.now()
         except Exception as e:
+            logger.warning(f"Failed to generate TOTP: {str(e)}")
             print(f"   ⚠️  Warning: Failed to generate TOTP: {str(e)}")
             return "000000"
 
+    def _start_token_refresh_scheduler(self):
+        """Start background scheduler for token refresh"""
+        try:
+            if self.scheduler is not None and self.scheduler.running:
+                self.scheduler.shutdown()
+
+            self.scheduler = BackgroundScheduler()
+
+            # Schedule token refresh every 4 hours
+            # This ensures token stays fresh for 24x7 operation
+            self.scheduler.add_job(
+                self._refresh_token,
+                'interval',
+                hours=4,
+                id='angel_one_token_refresh',
+                name='Angel One Token Refresh',
+                replace_existing=True,
+                misfire_grace_time=60
+            )
+
+            self.scheduler.start()
+            logger.info("✅ Token refresh scheduler started (every 4 hours)")
+            print("✅ Token refresh scheduler started (every 4 hours)")
+        except Exception as e:
+            logger.error(f"Failed to start token refresh scheduler: {str(e)}")
+            print(f"❌ Failed to start scheduler: {str(e)}")
+
+    def _refresh_token(self):
+        """Refresh Angel One JWT token"""
+        try:
+            logger.info("🔄 Starting token refresh...")
+            print(f"\n🔄 Token Refresh Triggered at {datetime.now()}")
+
+            if not self.smart:
+                logger.warning("SmartConnect not initialized for token refresh")
+                # Try to reinitialize
+                self._initialize()
+                return
+
+            # Generate new TOTP
+            totp_code = self._generate_totp()
+            logger.info(f"Generated new TOTP for refresh")
+
+            # Call generateSession again to get new tokens
+            print(f"   📡 Calling generateSession() for token refresh...")
+            response = self.smart.generateSession(
+                self.client_code,
+                self.pin,
+                totp_code
+            )
+
+            if not isinstance(response, dict) or not response.get("status"):
+                error_msg = response.get("message") if isinstance(response, dict) else "Unknown error"
+                logger.error(f"Token refresh failed: {error_msg}")
+                print(f"   ❌ Token refresh failed: {error_msg}")
+                return False
+
+            # Extract new tokens
+            data = response.get("data", {})
+            old_token = self.jwt_token[:20] + "..." if self.jwt_token else "None"
+
+            self.jwt_token = data.get("jwtToken")
+            self.refresh_token = data.get("refreshToken")
+            self.feed_token = data.get("feedToken")
+            self.token_created_at = datetime.now()
+            self.token_refreshed_count += 1
+
+            logger.info(f"✅ Token refresh successful (Refresh #{self.token_refreshed_count})")
+            print(f"   ✅ Token refreshed successfully!")
+            print(f"   📊 Total refreshes: {self.token_refreshed_count}")
+            print(f"   ⏰ New token created at: {self.token_created_at}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Token refresh error: {str(e)}")
+            print(f"   ❌ Token refresh error: {str(e)}")
+            return False
+
+    def get_token_status(self) -> Dict:
+        """Get token and refresh status"""
+        uptime = None
+        if self.token_created_at:
+            uptime = (datetime.now() - self.token_created_at).total_seconds() / 3600
+
+        return {
+            "authenticated": self.is_authenticated(),
+            "jwt_token_exists": bool(self.jwt_token),
+            "token_age_hours": round(uptime, 2) if uptime else None,
+            "token_created_at": self.token_created_at.isoformat() if self.token_created_at else None,
+            "refresh_count": self.token_refreshed_count,
+            "auto_refresh_enabled": self.enable_auto_refresh,
+            "scheduler_running": self.scheduler.running if self.scheduler else False,
+            "last_refresh_at": self.token_created_at.isoformat() if self.token_refreshed_count > 0 else None
+        }
+
     def is_authenticated(self) -> bool:
-        """Check if authenticated"""
+        """Check if authenticated with valid token"""
         return bool(self.jwt_token and self.smart)
 
     def get_ltp(self, exchange: str, symbol: str, token: str) -> Optional[float]:
