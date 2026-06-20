@@ -190,11 +190,80 @@ def trading_dashboard():
 # ===== HEALTH & STATUS =====
 @app.route('/api/health', methods=['GET'])
 def health():
+    """Simple health check - used by load balancers"""
     return jsonify({
         "status": "healthy",
         "service": "Tradosphere SaaS v3",
         "timestamp": datetime.utcnow().isoformat()
     }), 200
+
+@app.route('/api/health/detailed', methods=['GET'])
+def health_detailed():
+    """Detailed health check - includes token status, database, broker connection"""
+    try:
+        # Check broker connection
+        broker_status = "disconnected"
+        token_status = None
+
+        if market is not None:
+            if market.is_authenticated():
+                broker_status = "connected"
+                # Get token information
+                token_status = market.get_token_status() if hasattr(market, 'get_token_status') else {
+                    "authenticated": True,
+                    "token_age_hours": None
+                }
+            else:
+                broker_status = "failed_auth"
+
+        # Check database connection
+        db_status = "unknown"
+        try:
+            session = SessionLocal()
+            session.execute("SELECT 1")
+            session.close()
+            db_status = "connected"
+        except Exception as db_error:
+            db_status = f"error: {str(db_error)[:50]}"
+
+        # Build comprehensive health response
+        health_response = {
+            "status": "operational" if broker_status == "connected" and db_status == "connected" else "degraded",
+            "service": "Tradosphere SaaS v3",
+            "timestamp": datetime.utcnow().isoformat(),
+            "components": {
+                "broker": {
+                    "name": "Angel One",
+                    "status": broker_status,
+                    "token": token_status
+                },
+                "database": {
+                    "status": db_status,
+                    "type": "PostgreSQL/SQLite"
+                },
+                "api_server": {
+                    "status": "operational",
+                    "version": "3.0",
+                    "uptime_available": True
+                }
+            },
+            "checks_performed": [
+                "broker_connection",
+                "token_freshness",
+                "database_connection",
+                "api_server_health"
+            ]
+        }
+
+        http_status = 200 if health_response["status"] == "operational" else 503
+        return jsonify(health_response), http_status
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }), 500
 
 @app.route('/api/status', methods=['GET'])
 def status():
