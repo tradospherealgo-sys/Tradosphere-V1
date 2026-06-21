@@ -1607,7 +1607,6 @@
             const btn = document.getElementById('generateSignalsBtn');
             const container = document.getElementById('signalsContainer');
             const spinner = document.getElementById('signalsLoadingSpinner');
-            const symbol = document.getElementById('chainSymbol')?.value || 'NIFTY';
 
             // Show loading state
             btn.disabled = true;
@@ -1616,31 +1615,33 @@
             spinner.style.display = 'block';
 
             try {
-                const res = await fetch(`${API}/api/signals/generate`, {
+                // Call the simple signal generation endpoint (no auth required)
+                const res = await fetch(`${API}/api/generate`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${TOKEN}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ symbol, interval: '15' })
+                    body: JSON.stringify({
+                        symbols: ['NIFTY', 'BANKNIFTY', 'FINNIFTY']
+                    })
                 });
 
                 if (res.ok) {
                     const data = await res.json();
                     if (data.status === 'success' && data.signals && data.signals.length > 0) {
-                        displaySignals(data.signals, symbol);
+                        displaySignals(data.signals);
                     } else {
                         container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted);">No signals generated. Market conditions neutral.</div>';
                         container.style.display = 'block';
                     }
                 } else {
                     const error = await res.json();
-                    container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--red);">Error: ${error.message}</div>`;
+                    container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--red);">Error: ${error.message || 'Failed to generate signals'}</div>`;
                     container.style.display = 'block';
                 }
             } catch (err) {
                 console.log('Signal generation error:', err);
-                container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--red);">Failed to generate signals</div>';
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--red);">Failed to generate signals. Please try again.</div>';
                 container.style.display = 'block';
             } finally {
                 btn.disabled = false;
@@ -1649,7 +1650,7 @@
             }
         }
 
-        function displaySignals(signals, symbol) {
+        function displaySignals(signals) {
             const container = document.getElementById('signalsContainer');
 
             if (!signals || signals.length === 0) {
@@ -1665,6 +1666,7 @@
                 const textColor = isBuy ? 'var(--green)' : 'var(--red)';
                 const directionEmoji = isBuy ? '📈' : '📉';
                 const riskReward = signal.risk_reward || 0;
+                const profitPercent = ((signal.target - signal.entry) / signal.entry) * 100;
 
                 html += `
                     <div style="padding: 16px; border: 1px solid var(--border); border-radius: 8px; display: grid; grid-template-columns: 120px 1fr auto; gap: 16px; align-items: start;">
@@ -1673,18 +1675,18 @@
                         </div>
                         <div>
                             <div style="font-weight: 700; margin-bottom: 4px; font-size: 14px;">
-                                ${signal.symbol} ${signal.strike} ${signal.type}
+                                ${signal.symbol}
                             </div>
                             <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">
-                                Entry: ${signal.entry} • Target: ${signal.target} • SL: ${signal.stop_loss}
+                                Entry: ₹${signal.entry.toFixed(2)} • Target: ₹${signal.target.toFixed(2)} • SL: ₹${signal.stoploss.toFixed(2)}
                             </div>
                             <div style="font-size: 11px; color: var(--text); line-height: 1.4;">
-                                ${signal.reasoning}
+                                ${signal.reason}
                             </div>
                             <div style="margin-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 11px;">
                                 <div style="padding: 6px; background: rgba(100, 116, 139, 0.1); border-radius: 4px;">
                                     <div style="color: var(--muted);">Confidence</div>
-                                    <div style="font-weight: 700; color: ${textColor};">${signal.confidence.toFixed(0)}%</div>
+                                    <div style="font-weight: 700; color: ${textColor};">${signal.confidence}%</div>
                                 </div>
                                 <div style="padding: 6px; background: rgba(100, 116, 139, 0.1); border-radius: 4px;">
                                     <div style="color: var(--muted);">R:R Ratio</div>
@@ -1693,14 +1695,14 @@
                                 <div style="padding: 6px; background: rgba(100, 116, 139, 0.1); border-radius: 4px;">
                                     <div style="color: var(--muted);">Potential</div>
                                     <div style="font-weight: 700; color: ${textColor};">
-                                        ${isBuy ? '+' : '-'}${Math.abs(((signal.target - signal.entry) / signal.entry) * 100).toFixed(1)}%
+                                        ${isBuy ? '+' : '-'}${Math.abs(profitPercent).toFixed(1)}%
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div style="text-align: right; padding-top: 4px;">
                             <div style="color: var(--muted); font-size: 11px; margin-bottom: 8px;">#${index + 1}</div>
-                            <button onclick="copySignal('${signal.symbol} ${signal.strike} ${signal.type}')" style="padding: 6px 12px; background: var(--border); color: var(--text); border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
+                            <button onclick="copySignal('${signal.symbol} ${signal.direction} Entry: ${signal.entry.toFixed(2)}')" style="padding: 6px 12px; background: var(--border); color: var(--text); border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
                                 📋 Copy
                             </button>
                         </div>
