@@ -1,14 +1,64 @@
 {
   "version": 2,
+  "name": "tradosphere-frontend",
+  "env": {
+    "NEXT_PUBLIC_API_URL": {
+      "description": "Backend API URL",
+      "required": true,
+      "example": "https://tradosphere-backend.railway.app"
+    }
+  },
   "buildCommand": "echo 'Frontend static files ready'",
   "outputDirectory": ".",
+  "public": true,
+  "github": {
+    "enabled": false
+  },
   "routes": [
     {
+      "src": "/api/(.*)",
+      "status": 404,
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
+      "src": "/(.*\\.(?:css|js|json|ico|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot))",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
       "src": "/(.*)",
-      "dest": "dashboard_live.html"
+      "dest": "dashboard_live.html",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "X-Content-Type-Options": "nosniff"
+      }
     }
   ],
   "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
     {
       "source": "/api/(.*)",
       "headers": [
