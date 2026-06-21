@@ -36,9 +36,11 @@ from signal_writer import generate_on_demand
 from technical_engine import TechnicalEngine
 from options_engine import OptionsEngine
 from signals_engine import SignalsEngine
+from signal_writer import SignalGenerator
 from ai_analysis_engine import AIAnalysisEngine
 from learning_engine import LearningEngine
 from reconciliation_engine import ReconciliationEngine
+from unified_signal_service import get_unified_signal_service
 
 load_dotenv()
 
@@ -187,6 +189,55 @@ def trading_dashboard():
         "message": "Trading dashboard not found"
     }), 404
 
+# ===== TEST DASHBOARDS (for local testing) =====
+@app.route('/test/dashboard-live', methods=['GET'])
+def test_dashboard_live():
+    """Test dashboard_live.html"""
+    html_content = get_html_file('dashboard_live.html')
+    if html_content:
+        return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    return jsonify({"status": "error", "message": "dashboard_live.html not found"}), 404
+
+@app.route('/test/dashboard-saas', methods=['GET'])
+def test_dashboard_saas():
+    """Test saas_dashboard.html"""
+    html_content = get_html_file('saas_dashboard.html')
+    if html_content:
+        return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    return jsonify({"status": "error", "message": "saas_dashboard.html not found"}), 404
+
+@app.route('/test/dashboard-unified', methods=['GET'])
+def test_dashboard_unified():
+    """Test dashboard_unified.html"""
+    html_content = get_html_file('dashboard_unified.html')
+    if html_content:
+        return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    return jsonify({"status": "error", "message": "dashboard_unified.html not found"}), 404
+
+@app.route('/test/dashboard-pro', methods=['GET'])
+def test_dashboard_pro():
+    """Test dashboard_pro.html"""
+    html_content = get_html_file('dashboard_pro.html')
+    if html_content:
+        return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    return jsonify({"status": "error", "message": "dashboard_pro.html not found"}), 404
+
+@app.route('/test/dashboard-5tabs', methods=['GET'])
+def test_dashboard_5tabs():
+    """Test dashboard_unified_5tabs.html - NEW 5-TAB UNIFIED DASHBOARD"""
+    html_content = get_html_file('dashboard_unified_5tabs.html')
+    if html_content:
+        return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    return jsonify({"status": "error", "message": "dashboard_unified_5tabs.html not found"}), 404
+
+@app.route('/test/login', methods=['GET'])
+def test_login():
+    """Test login_simple.html"""
+    html_content = get_html_file('login_simple.html')
+    if html_content:
+        return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    return jsonify({"status": "error", "message": "login_simple.html not found"}), 404
+
 # ===== HEALTH & STATUS =====
 @app.route('/api/health', methods=['GET'])
 def health():
@@ -219,8 +270,9 @@ def health_detailed():
         # Check database connection
         db_status = "unknown"
         try:
+            from sqlalchemy import text
             session = SessionLocal()
-            session.execute("SELECT 1")
+            session.execute(text("SELECT 1"))
             session.close()
             db_status = "connected"
         except Exception as db_error:
@@ -576,11 +628,14 @@ def get_signals():
 @app.route('/api/signals/generate', methods=['POST'])
 @AuthDecorator.token_required
 def generate_signals():
-    """Generate intelligent trade signals based on comprehensive market analysis"""
+    """
+    Generate intelligent trade signals using System B (SignalGenerator)
+    UNIFIED ENDPOINT: Single source of truth for all signal generation
+    Dashboard, Terminal, and API clients receive identical signals
+    """
     try:
         user_id = g.user_id
         symbol = request.json.get('symbol', 'NIFTY') if request.json else 'NIFTY'
-        interval = request.json.get('interval', '15') if request.json else '15'
 
         if not market or not market.is_authenticated():
             return jsonify({"status": "error", "message": "Broker not connected"}), 401
@@ -589,86 +644,152 @@ def generate_signals():
         if symbol not in ['NIFTY', 'BANKNIFTY', 'FINNIFTY']:
             symbol = 'NIFTY'
 
-        # Get market data
-        if symbol == 'NIFTY':
-            market_data = market.get_nifty_price()
-        elif symbol == 'BANKNIFTY':
-            market_data = market.get_banknifty_price()
+        # Get unified signal service (System B based)
+        signal_service = get_unified_signal_service(market)
+
+        # Generate signal using System B (SignalGenerator)
+        result = signal_service.generate_signal(symbol)
+
+        # Add user context to response
+        if result['status'] == 'success':
+            result['user_id'] = user_id
+            result['api_endpoint'] = 'unified_signal_service'
+            return jsonify(result), 200
+        elif result['status'] == 'no_signal':
+            result['user_id'] = user_id
+            return jsonify(result), 200
         else:
-            market_data = market.get_finnifty_price()
-
-        if not market_data:
-            return jsonify({"status": "error", "message": f"Could not fetch market data for {symbol}"}), 400
-
-        # Get live prices with OHLC
-        live_endpoint_data = {
-            "status": "success",
-            "data": {
-                "tickers": [{
-                    "symbol": symbol,
-                    "current_price": market_data.get('ltp', 0),
-                    "change": 0,
-                    "change_percent": 0
-                }]
-            }
-        }
-
-        # Get options chain
-        option_chain = market.get_option_chain(symbol, 'current')
-        if not option_chain or option_chain.get("status") != "success":
-            return jsonify({
-                "status": "error",
-                "message": f"Could not fetch option chain for {symbol}"
-            }), 400
-
-        options_data = {
-            "pcr": option_chain.get("pcr", 1.0),
-            "max_pain": option_chain.get("max_pain", market_data.get('ltp', 0)),
-            "trend": option_chain.get("trend", "neutral")
-        }
-
-        # Get technical indicators
-        candles = market.get_historical_candles(symbol, interval, 100)
-        if not candles or len(candles) < 26:
-            return jsonify({
-                "status": "error",
-                "message": f"Insufficient candle data for {symbol}"
-            }), 400
-
-        technical_data = TechnicalEngine.analyze(candles)
-        if technical_data.get("status") != "success":
-            return jsonify({
-                "status": "error",
-                "message": "Technical analysis failed"
-            }), 400
-
-        # Prepare market data for signals
-        market_for_signals = {
-            "current_price": market_data.get('ltp', 0),
-            "change_percent": 0
-        }
-
-        # Generate signals
-        signals = SignalsEngine.generate_signals(
-            market_for_signals,
-            options_data,
-            technical_data,
-            symbol
-        )
-
-        return jsonify({
-            "status": "success",
-            "symbol": symbol,
-            "timestamp": datetime.utcnow().isoformat(),
-            "signals": signals,
-            "signal_count": len(signals),
-            "user_id": user_id
-        }), 200
+            return jsonify(result), 400
 
     except Exception as e:
         print(f"Signal generation error: {str(e)}")
         import traceback
         traceback.print_exc()
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "user_id": user_id if 'user_id' in locals() else None
+        }), 500
+
+
+@app.route('/api/signals/batch-generate', methods=['POST'])
+@AuthDecorator.token_required
+def batch_generate_signals():
+    """
+    Generate signals for multiple symbols in one call
+    SYSTEM B ONLY: Ensures consistency across all symbols
+    """
+    try:
+        user_id = g.user_id
+        symbols = request.json.get('symbols', ['NIFTY', 'BANKNIFTY', 'FINNIFTY']) if request.json else ['NIFTY', 'BANKNIFTY', 'FINNIFTY']
+
+        if not market or not market.is_authenticated():
+            return jsonify({"status": "error", "message": "Broker not connected"}), 401
+
+        # Get unified signal service
+        signal_service = get_unified_signal_service(market)
+
+        # Generate signals for all symbols
+        result = signal_service.generate_signals_batch(symbols)
+        result['user_id'] = user_id
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "user_id": user_id if 'user_id' in locals() else None
+        }), 500
+
+
+@app.route('/api/signals/history/<symbol>', methods=['GET'])
+@AuthDecorator.token_required
+def signal_history(symbol):
+    """
+    Get signal history for a specific symbol
+    Shows all signals generated for this symbol (NIFTY, BANKNIFTY, FINNIFTY)
+    """
+    try:
+        user_id = g.user_id
+        limit = request.args.get('limit', 20, type=int)
+
+        if symbol not in ['NIFTY', 'BANKNIFTY', 'FINNIFTY']:
+            return jsonify({"status": "error", "message": f"Invalid symbol: {symbol}"}), 400
+
+        # Get unified signal service
+        signal_service = get_unified_signal_service(market)
+
+        # Get history
+        history = signal_service.get_signal_history(symbol, limit)
+
+        return jsonify({
+            "status": "success",
+            "symbol": symbol,
+            "count": len(history),
+            "user_id": user_id,
+            "data": history,
+            "timestamp": datetime.utcnow().isoformat()
+        }), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/signals/performance', methods=['GET'])
+@AuthDecorator.token_required
+def signal_performance():
+    """
+    Get signal performance metrics
+    Win rate, accuracy, P&L tracking
+    """
+    try:
+        user_id = g.user_id
+        symbol = request.args.get('symbol')
+
+        # Get unified signal service
+        signal_service = get_unified_signal_service(market)
+
+        # Get performance
+        performance = signal_service.get_signal_performance(symbol)
+        performance['user_id'] = user_id
+
+        return jsonify({
+            "status": "success",
+            "data": performance,
+            "timestamp": datetime.utcnow().isoformat()
+        }), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/signals/validate-consistency', methods=['POST'])
+@AuthDecorator.token_required
+def validate_signal_consistency():
+    """
+    Validate that signals are consistent across dashboard, terminal, and API
+    Used to verify System B is being used everywhere
+    """
+    try:
+        user_id = g.user_id
+        symbol = request.json.get('symbol', 'NIFTY') if request.json else 'NIFTY'
+        external_signal = request.json.get('signal', {}) if request.json else {}
+
+        # Get unified signal service
+        signal_service = get_unified_signal_service(market)
+
+        # Validate consistency
+        validation = signal_service.validate_signal_consistency(symbol, external_signal)
+        validation['user_id'] = user_id
+
+        return jsonify({
+            "status": "success",
+            "data": validation,
+            "timestamp": datetime.utcnow().isoformat()
+        }), 200
+
+    except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # ===== AI INSIGHTS (Smart Analysis) =====

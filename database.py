@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 
@@ -20,21 +20,32 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 class Signal(Base):
-    """Trading signal model"""
+    """Trading signal model - System B (SignalGenerator) output"""
     __tablename__ = "signals"
 
     id = Column(Integer, primary_key=True, index=True)
-    symbol = Column(String, nullable=False)
+    symbol = Column(String, nullable=False, index=True)
     entry = Column(Float, nullable=False)
     sl = Column(Float, nullable=False)
     target = Column(Float, nullable=False)
-    verdict = Column(String, nullable=False)
-    confidence = Column(Float, nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow)
-    status = Column(String, default="PENDING")
-    ema_signal = Column(String, nullable=True)
-    oi_bias = Column(String, nullable=True)
-    pcr = Column(Float, nullable=True)
+    verdict = Column(String, nullable=False)  # BUY, SELL, WAIT
+    confidence = Column(Float, nullable=False)  # 0-100 confidence score
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+    status = Column(String, default="PENDING")  # PENDING, EXECUTED, CLOSED, CANCELLED
+
+    # System B specific fields
+    setup = Column(String, nullable=True)  # BREAKOUT, RANGE_BOUND, etc
+    ema_signal = Column(String, nullable=True)  # Trend direction
+    oi_bias = Column(String, nullable=True)  # OI skew analysis
+    pcr = Column(Float, nullable=True)  # Put-Call Ratio
+    quality_score = Column(Text, nullable=True)  # JSON with tech/options/market scores
+    reasoning = Column(Text, nullable=True)  # JSON array of reasoning factors
+
+    # Performance tracking
+    execution_price = Column(Float, nullable=True)  # Actual entry price
+    exit_price = Column(Float, nullable=True)  # Actual exit price
+    pnl = Column(Float, nullable=True)  # Profit/Loss
+    pnl_percent = Column(Float, nullable=True)  # P&L as percentage
 
     trades = relationship("Trade", back_populates="signal")
 
@@ -49,9 +60,16 @@ class Signal(Base):
             "confidence": self.confidence,
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
             "status": self.status,
+            "setup": self.setup,
             "ema_signal": self.ema_signal,
             "oi_bias": self.oi_bias,
-            "pcr": self.pcr
+            "pcr": self.pcr,
+            "quality_score": self.quality_score,
+            "reasoning": self.reasoning,
+            "execution_price": self.execution_price,
+            "exit_price": self.exit_price,
+            "pnl": self.pnl,
+            "pnl_percent": self.pnl_percent
         }
 
 class Trade(Base):
