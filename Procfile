@@ -1,4 +1,5 @@
 # Production Procfile for Railway
+# Updated: 2026-06-22 - Force rebuild
 
 # Release phase: Run before deployment
 release: python db_init.py
