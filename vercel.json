@@ -1,19 +1,5 @@
 {
   "version": 2,
-  "name": "tradosphere-frontend",
-  "env": {
-    "NEXT_PUBLIC_API_URL": {
-      "description": "Backend API URL",
-      "required": true,
-      "example": "https://tradosphere-backend.railway.app"
-    }
-  },
-  "buildCommand": "echo 'Frontend static files ready'",
-  "outputDirectory": ".",
-  "public": true,
-  "github": {
-    "enabled": false
-  },
   "routes": [
     {
       "src": "/config.js",
@@ -25,10 +11,7 @@
     },
     {
       "src": "/api/(.*)",
-      "status": 404,
-      "headers": {
-        "Cache-Control": "no-cache, no-store, must-revalidate"
-      }
+      "status": 404
     },
     {
       "src": "/(.*\\.(?:css|js|json|ico|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot))",
@@ -38,11 +21,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "dashboard_live.html",
-      "headers": {
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "X-Content-Type-Options": "nosniff"
-      }
+      "dest": "/dashboard_live.html"
     }
   ],
   "headers": [
@@ -58,33 +37,8 @@
           "value": "DENY"
         },
         {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        },
-        {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
-        }
-      ]
-    },
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Credentials",
-          "value": "true"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "X-CSRF-Token,X-Requested-With,Accept,Accept-Version,Content-Length,Content-MD5,Content-Type,Date,X-Api-Version,Authorization"
         }
       ]
     }
