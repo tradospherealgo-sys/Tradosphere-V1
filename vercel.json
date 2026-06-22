@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "name": "tradosphere-frontend",
   "env": {
     "NEXT_PUBLIC_API_URL": {
@@ -10,10 +10,6 @@
   },
   "buildCommand": "echo 'Frontend static files ready'",
   "outputDirectory": ".",
-  "public": true,
-  "github": {
-    "enabled": false
-  },
   "routes": [
     {
       "src": "/config.js",
