@@ -68,6 +68,13 @@ def google_auth():
             # Verify the token with Google
             google_client_id = os.getenv("GOOGLE_CLIENT_ID")
 
+            if not google_client_id:
+                print("❌ CRITICAL: GOOGLE_CLIENT_ID environment variable not set")
+                return jsonify({
+                    "status": "error",
+                    "message": "Server configuration error: GOOGLE_CLIENT_ID not set"
+                }), 500
+
             idinfo = id_token.verify_oauth2_token(
                 google_token,
                 requests.Request(),
