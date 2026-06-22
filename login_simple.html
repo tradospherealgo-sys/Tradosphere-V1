@@ -251,6 +251,11 @@
     </div>
 
     <script>
+        // Define API base URL with fallback chain
+        const API = (typeof API_BASE_URL !== 'undefined')
+            ? API_BASE_URL
+            : 'https://tradosphere-v1-production.up.railway.app';
+
         // Log API base URL for debugging
         console.log('🌐 API Base URL:', API);
 
