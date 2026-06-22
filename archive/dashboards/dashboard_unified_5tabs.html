@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradosphere - 5-Tab Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0e27;
+            --card: #131829;
+            --border: #1f2937;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --green: #10b981;
+            --red: #ef4444;
+            --violet: #8b5cf6;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--violet);
+        }
+
+        .ticker {
+            display: flex;
+            gap: 20px;
+        }
+
+        .ticker-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ticker-symbol {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .ticker-price {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .ticker-change {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .ticker-change.up {
+            color: var(--green);
+        }
+
+        .ticker-change.down {
+            color: var(--red);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--violet);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* TABS */
+        .tabs-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 10px 16px;
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--violet);
+        }
+
+        .tab-btn.active {
+            color: var(--violet);
+            border-bottom-color: var(--violet);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* CARDS */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        /* STAT GRID */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: rgba(100, 116, 139, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .stat-change.up {
+            color: var(--green);
+        }
+
+        .stat-change.down {
+            color: var(--red);
+        }
+
+        /* TABLES */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        thead {
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(31, 41, 55, 0.5);
+            font-size: 13px;
+        }
+
+        tr:hover {
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 8px 16px;
+            background: var(--violet);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-danger {
+            background: var(--red);
+        }
+
+        .btn-success {
+            background: var(--green);
+        }
+
+        /* FORMS */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            background: rgba(100, 116, 139, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--violet);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .ticker {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .stat-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .tabs-nav {
+                overflow-x: auto;
+            }
+
+            table {
+                font-size: 11px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+
+        /* CHART CONTAINER */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        /* POSITION ITEM */
+        .position-item {
+            background: rgba(100, 116, 139, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .position-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .position-symbol {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--violet);
+        }
+
+        .position-pnl {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .position-pnl.positive {
+            color: var(--green);
+        }
+
+        .position-pnl.negative {
+            color: var(--red);
+        }
+
+        .position-meta {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+
+        .position-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .position-meta-label {
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .position-meta-value {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .position-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* BOT CARD */
+        .bot-card {
+            background: rgba(100, 116, 139, 0.1);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .bot-card.active {
+            border-color: var(--green);
+        }
+
+        .bot-card.paused {
+            border-color: var(--muted);
+        }
+
+        .bot-card.error {
+            border-color: var(--red);
+        }
+
+        .bot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .bot-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .bot-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        .bot-status.paused .bot-status-dot {
+            background: var(--muted);
+        }
+
+        .bot-status.error .bot-status-dot {
+            background: var(--red);
+        }
+
+        /* CHAT */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            padding: 16px;
+            background: rgba(100, 116, 139, 0.1);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .chat-message {
+            margin-bottom: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-message.user {
+            justify-content: flex-end;
+        }
+
+        .chat-message-content {
+            max-width: 70%;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .chat-message.assistant .chat-message-content {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid var(--violet);
+        }
+
+        .chat-message.user .chat-message-content {
+            background: rgba(139, 92, 246, 0.3);
+            border: 1px solid var(--violet);
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo">📈 Tradosphere</div>
+                <div class="ticker">
+                    <div class="ticker-item">
+                        <div class="ticker-symbol">NIFTY 50</div>
+                        <div class="ticker-price">24,047.50</div>
+                        <div class="ticker-change up">↑ +0.97%</div>
+                    </div>
+                    <div class="ticker-item">
+                        <div class="ticker-symbol">BANKNIFTY</div>
+                        <div class="ticker-price">57,489.75</div>
+                        <div class="ticker-change up">↑ +0.90%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div>
+                    <div style="font-size: 14px; font-weight: 600;">John Trader</div>
+                    <div style="font-size: 12px; color: var(--muted);">Pro Plan</div>
+                </div>
+                <div class="user-avatar">JT</div>
+            </div>
+        </div>
+
+        <!-- TAB NAVIGATION -->
+        <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('research')">📈 Research</button>
+            <button class="tab-btn" onclick="switchTab('trading')">💰 Trading</button>
+            <button class="tab-btn" onclick="switchTab('automation')">🤖 Automation</button>
+            <button class="tab-btn" onclick="switchTab('assistant')">✨ Assistant</button>
+        </div>
+
+        <!-- ================== TAB 1: DASHBOARD ================== -->
+        <div id="dashboard-tab" class="tab-content active">
+            <!-- ACCOUNT SUMMARY -->
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Balance</div>
+                    <div class="stat-value">₹1,00,000</div>
+                    <div class="stat-change">Available</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Used Margin</div>
+                    <div class="stat-value">₹25,000</div>
+                    <div class="stat-change">3 Positions</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total P&L</div>
+                    <div class="stat-value up" style="color: var(--green);">+₹5,250</div>
+                    <div class="stat-change up">+5.25%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Win Rate</div>
+                    <div class="stat-value" style="color: var(--violet);">65%</div>
+                    <div class="stat-change">23 Trades</div>
+                </div>
+            </div>
+
+            <!-- P&L CHART -->
+            <div class="card">
+                <div class="card-title">📊 P&L Chart (Daily)</div>
+                <div class="chart-container">
+                    <canvas id="pnlChart"></canvas>
+                </div>
+            </div>
+
+            <!-- OPEN POSITIONS -->
+            <div class="card">
+                <div class="card-title">📍 Open Positions</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Entry</th>
+                            <th>Target</th>
+                            <th>SL</th>
+                            <th>P&L</th>
+                            <th>Time</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: 700; color: var(--violet);">NIFTY CALL</td>
+                            <td>24,000</td>
+                            <td>24,300</td>
+                            <td>23,900</td>
+                            <td style="color: var(--green); font-weight: 700;">+₹1,500</td>
+                            <td>45 min</td>
+                            <td><button class="btn btn-small btn-danger">Close</button></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 700; color: var(--violet);">BNF PUT</td>
+                            <td>57,200</td>
+                            <td>56,800</td>
+                            <td>57,500</td>
+                            <td style="color: var(--green); font-weight: 700;">+₹2,100</td>
+                            <td>28 min</td>
+                            <td><button class="btn btn-small btn-danger">Close</button></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 700; color: var(--violet);">NIFTY CALL</td>
+                            <td>23,950</td>
+                            <td>24,250</td>
+                            <td>23,750</td>
+                            <td style="color: var(--green); font-weight: 700;">+₹1,650</td>
+                            <td>12 min</td>
+                            <td><button class="btn btn-small btn-danger">Close</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- RECENT TRADES -->
+            <div class="card">
+                <div class="card-title">📋 Recent Closed Trades</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Symbol</th>
+                            <th>Entry</th>
+                            <th>Exit</th>
+                            <th>P&L</th>
+                            <th>Return</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Jun 20, 14:15</td>
+                            <td style="color: var(--violet); font-weight: 700;">NIFTY CALL</td>
+                            <td>24,000</td>
+                            <td>24,150</td>
+                            <td style="color: var(--green); font-weight: 700;">+₹250</td>
+                            <td style="color: var(--green);">+1.04%</td>
+                        </tr>
+                        <tr>
+                            <td>Jun 20, 13:45</td>
+                            <td style="color: var(--violet); font-weight: 700;">BNF PUT</td>
+                            <td>57,100</td>
+                            <td>56,950</td>
+                            <td style="color: var(--green); font-weight: 700;">+₹150</td>
+                            <td style="color: var(--green);">+0.26%</td>
+                        </tr>
+                        <tr>
+                            <td>Jun 20, 11:20</td>
+                            <td style="color: var(--violet); font-weight: 700;">NIFTY CALL</td>
+                            <td>23,950</td>
+                            <td>24,050</td>
+                            <td style="color: var(--red); font-weight: 700;">-₹100</td>
+                            <td style="color: var(--red);">-0.42%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PERFORMANCE METRICS -->
+            <div class="card">
+                <div class="card-title">📈 Performance Metrics</div>
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Total Trades</div>
+                        <div class="stat-value">25</div>
+                        <div class="stat-change">All time</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Closed Trades</div>
+                        <div class="stat-value">22</div>
+                        <div class="stat-change">Completed</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Avg Win</div>
+                        <div class="stat-value up" style="color: var(--green);">+₹450</div>
+                        <div class="stat-change">Per trade</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Avg Loss</div>
+                        <div class="stat-value down" style="color: var(--red);">-₹200</div>
+                        <div class="stat-change">Per trade</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Profit Factor</div>
+                        <div class="stat-value">1.8x</div>
+                        <div class="stat-change">Excellent</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Max Drawdown</div>
+                        <div class="stat-value">-5%</div>
+                        <div class="stat-change">This month</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================== TAB 2: RESEARCH ================== -->
+        <div id="research-tab" class="tab-content">
+            <!-- SYMBOL & TIMEFRAME SELECTOR -->
+            <div class="card">
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <select style="flex: 1; max-width: 200px;">
+                        <option>NIFTY 50</option>
+                        <option>BANKNIFTY</option>
+                        <option>FINNIFTY</option>
+                    </select>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-outline btn-small">1M</button>
+                        <button class="btn btn-outline btn-small">5M</button>
+                        <button class="btn btn-outline btn-small active">15M</button>
+                        <button class="btn btn-outline btn-small">1H</button>
+                        <button class="btn btn-outline btn-small">1D</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CANDLESTICK CHART -->
+            <div class="card">
+                <div class="card-title">📊 Price Chart (NIFTY 15M)</div>
+                <div class="chart-container">
+                    <canvas id="candleChart"></canvas>
+                </div>
+            </div>
+
+            <!-- TECHNICAL INDICATORS & OPTIONS -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="card">
+                    <div class="card-title">📈 Technical Indicators</div>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <label style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                            <input type="checkbox" checked style="width: auto;">
+                            RSI (14): <span style="color: var(--violet); font-weight: 700;">45.2</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                            <input type="checkbox" checked style="width: auto;">
+                            EMA9: <span style="color: var(--green); font-weight: 700;">24,025</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                            <input type="checkbox" checked style="width: auto;">
+                            EMA50: <span style="color: var(--green); font-weight: 700;">23,950</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                            <input type="checkbox" checked style="width: auto;">
+                            MACD: <span style="color: var(--green); font-weight: 700;">Positive</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                            <input type="checkbox" checked style="width: auto;">
+                            Bollinger: <span style="color: var(--violet); font-weight: 700;">Expanding</span>
+                        </label>
+                        <hr style="border: none; border-top: 1px solid var(--border); margin: 8px 0;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Momentum:</span>
+                            <span style="color: var(--green); font-weight: 700;">Strong Bullish</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Trend:</span>
+                            <span style="color: var(--green); font-weight: 700;">Bullish</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Setup:</span>
+                            <span style="color: var(--green); font-weight: 700;">Breakout</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">⌬ Greeks Heatmap</div>
+                    <table style="font-size: 12px;">
+                        <thead>
+                            <tr>
+                                <th>Strike</th>
+                                <th>Call Δ</th>
+                                <th>Put Δ</th>
+                                <th>OI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 700;">24000</td>
+                                <td style="background: rgba(16, 185, 129, 0.2); border-radius: 4px;">0.65</td>
+                                <td style="background: rgba(239, 68, 68, 0.2); border-radius: 4px;">0.35</td>
+                                <td>500K</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">24100</td>
+                                <td style="background: rgba(16, 185, 129, 0.2); border-radius: 4px;">0.58</td>
+                                <td style="background: rgba(239, 68, 68, 0.2); border-radius: 4px;">0.42</td>
+                                <td>800K</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">24200</td>
+                                <td style="background: rgba(16, 185, 129, 0.2); border-radius: 4px;">0.48</td>
+                                <td style="background: rgba(239, 68, 68, 0.2); border-radius: 4px;">0.52</td>
+                                <td>600K</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">24300</td>
+                                <td style="background: rgba(16, 185, 129, 0.1); border-radius: 4px;">0.35</td>
+                                <td style="background: rgba(239, 68, 68, 0.2); border-radius: 4px;">0.65</td>
+                                <td>900K</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MARKET INSIGHTS -->
+            <div class="card">
+                <div class="card-title">💡 Market Insights</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                    <div style="padding: 12px; background: rgba(100, 116, 139, 0.1); border-radius: 6px;">
+                        <div style="color: var(--muted); font-size: 11px; font-weight: 600; margin-bottom: 4px;">PCR RATIO</div>
+                        <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">1.2</div>
+                        <div style="color: var(--green); font-size: 12px; font-weight: 600;">Bullish</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(100, 116, 139, 0.1); border-radius: 6px;">
+                        <div style="color: var(--muted); font-size: 11px; font-weight: 600; margin-bottom: 4px;">MAX PAIN</div>
+                        <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">24,150</div>
+                        <div style="color: var(--text); font-size: 12px; font-weight: 600;">Resistance Level</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(100, 116, 139, 0.1); border-radius: 6px;">
+                        <div style="color: var(--muted); font-size: 11px; font-weight: 600; margin-bottom: 4px;">IV PERCENTILE</div>
+                        <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">65%</div>
+                        <div style="color: var(--text); font-size: 12px; font-weight: 600;">Moderate Volatility</div>
+                    </div>
+                </div>
+                <div style="margin-top: 12px; padding: 12px; background: rgba(139, 92, 246, 0.1); border-left: 3px solid var(--violet); border-radius: 4px;">
+                    <p style="font-size: 13px; line-height: 1.5;">
+                        <strong>📌 Analysis:</strong> NIFTY shows bullish bias with strong momentum. Price above EMA9 > EMA50.
+                        Support at 23,950, Resistance at 24,250. PCR bullish indicates put buying support.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================== TAB 3: TRADING ================== -->
+        <div id="trading-tab" class="tab-content">
+            <!-- CREATE TRADE FORM -->
+            <div class="card">
+                <div class="card-title">🎯 Create New Trade</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+                    <div class="form-group">
+                        <label>Symbol</label>
+                        <select>
+                            <option>NIFTY 50</option>
+                            <option>BANKNIFTY</option>
+                            <option>FINNIFTY</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Direction</label>
+                        <select>
+                            <option>BUY CALL</option>
+                            <option>BUY PUT</option>
+                            <option>SELL CALL</option>
+                            <option>SELL PUT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Entry Price</label>
+                        <input type="number" placeholder="24000" value="24000">
+                    </div>
+                    <div class="form-group">
+                        <label>Target Price</label>
+                        <input type="number" placeholder="24300" value="24300">
+                    </div>
+                    <div class="form-group">
+                        <label>Stop Loss</label>
+                        <input type="number" placeholder="23900" value="23900">
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" placeholder="1" value="1">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn" style="flex: 1;">🚀 Execute Trade</button>
+                    <button class="btn btn-outline" style="flex: 1;">Preview</button>
+                </div>
+            </div>
+
+            <!-- ACTIVE POSITIONS (same as Dashboard tab) -->
+            <div class="card">
+                <div class="card-title">📍 Active Positions (Live Updates)</div>
+                <div class="position-item">
+                    <div class="position-header">
+                        <div class="position-symbol">NIFTY CALL</div>
+                        <div class="position-pnl positive">+₹1,500 (+0.62%)</div>
+                    </div>
+                    <div class="position-meta">
+                        <div class="position-meta-item">
+                            <div class="position-meta-label">Entry</div>
+                            <div class="position-meta-value">24,000</div>
+                        </div>
+                        <div class="position-meta-item">
+                            <div class="position-meta-label">Current</div>
+                            <div class="position-meta-value">24,150</div>
+                        </div>
+                        <div class="position-meta-item">
+                            <div class="position-meta-label">Target</div>
+                            <div class="position-meta-value">24,300</div>
+                        </div>
+                        <div class="position-meta-item">
+                            <div class="position-meta-label">Time</div>
+                            <div class="position-meta-value">45 mins</div>
+                        </div>
+                    </div>
+                    <div class="position-actions">
+                        <button class="btn btn-small btn-danger">Close</button>
+                        <button class="btn btn-small btn-outline">Modify</button>
+                    </div>
+                </div>
+
+                <div class="position-item">
+                    <div class="position-header">
+                        <div class="position-symbol">BNF PUT</div>
+                        <div class="position-pnl positive">+₹2,100 (+0.35%)</div>
+                    </div>
+                    <div class="position-meta">
+                        <div class="position-meta-item">
+                            <div class="position-meta-label">Entry</div>
+                            <div class="position-meta-value">57,200</div>
+                        </div>
+                        <div class="position-meta-item">
+                            <div class="position-meta-label">Current</div>
+                            <div class="position-meta-value">57,400</div>
+                        </div>
+                        <div class="position-meta-item">
+                            <div class="position-meta-label">Target</div>
+                            <div class="position-meta-value">57,800</div>
+                        </div>
+                        <div class="position-meta-item">
+                            <div class="position-meta-label">Time</div>
+                            <div class="position-meta-value">28 mins</div>
+                        </div>
+                    </div>
+                    <div class="position-actions">
+                        <button class="btn btn-small btn-danger">Close</button>
+                        <button class="btn btn-small btn-outline">Modify</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRADE HISTORY -->
+            <div class="card">
+                <div class="card-title">📋 Trade History</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Symbol</th>
+                            <th>Entry</th>
+                            <th>Exit</th>
+                            <th>P&L</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Jun 20, 14:15</td>
+                            <td style="color: var(--violet); font-weight: 700;">NIFTY CALL</td>
+                            <td>24,000</td>
+                            <td>24,250</td>
+                            <td style="color: var(--green); font-weight: 700;">+₹250</td>
+                            <td>8 min</td>
+                            <td><span style="background: rgba(16, 185, 129, 0.2); padding: 4px 8px; border-radius: 4px; font-size: 11px;">Closed</span></td>
+                        </tr>
+                        <tr>
+                            <td>Jun 20, 13:45</td>
+                            <td style="color: var(--violet); font-weight: 700;">BNF PUT</td>
+                            <td>57,100</td>
+                            <td>57,000</td>
+                            <td style="color: var(--green); font-weight: 700;">+₹100</td>
+                            <td>3 min</td>
+                            <td><span style="background: rgba(16, 185, 129, 0.2); padding: 4px 8px; border-radius: 4px; font-size: 11px;">Closed</span></td>
+                        </tr>
+                        <tr>
+                            <td>Jun 20, 11:20</td>
+                            <td style="color: var(--violet); font-weight: 700;">NIFTY CALL</td>
+                            <td>23,900</td>
+                            <td>24,100</td>
+                            <td style="color: var(--green); font-weight: 700;">+₹200</td>
+                            <td>1 h</td>
+                            <td><span style="background: rgba(16, 185, 129, 0.2); padding: 4px 8px; border-radius: 4px; font-size: 11px;">Closed</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================== TAB 4: AUTOMATION ================== -->
+        <div id="automation-tab" class="tab-content">
+            <button class="btn" style="margin-bottom: 20px;">➕ Create New Bot</button>
+
+            <!-- BOT STATUS DASHBOARD -->
+            <div class="card">
+                <div class="card-title">🤖 Active Bots (Status Dashboard)</div>
+
+                <div class="bot-card active">
+                    <div class="bot-header">
+                        <div>
+                            <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">EMA Crossover Strategy</div>
+                            <div style="font-size: 12px; color: var(--muted);">Symbol: NIFTY | Timeframe: 5M</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="bot-status">
+                                <span class="bot-status-dot"></span>
+                                <span>RUNNING</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Since 2h ago</div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px;">
+                        <div>
+                            <div style="font-size: 11px; color: var(--muted);">Profit Today</div>
+                            <div style="font-weight: 700; color: var(--green);">+₹850</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: var(--muted);">Win Rate</div>
+                            <div style="font-weight: 700; color: var(--green);">60%</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: var(--muted);">Trades Today</div>
+                            <div style="font-weight: 700;">5</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: var(--muted);">Last Trade</div>
+                            <div style="font-weight: 700;">25 mins ago</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-small btn-outline">⏸️ Pause</button>
+                        <button class="btn btn-small btn-outline">✏️ Edit</button>
+                        <button class="btn btn-small btn-danger">🗑️ Delete</button>
+                    </div>
+                </div>
+
+                <div class="bot-card paused">
+                    <div class="bot-header">
+                        <div>
+                            <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">MACD Signal Strategy</div>
+                            <div style="font-size: 12px; color: var(--muted);">Symbol: BANKNIFTY | Timeframe: 15M</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="bot-status paused">
+                                <span class="bot-status-dot"></span>
+                                <span>PAUSED</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Paused 3h ago</div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px;">
+                        <div>
+                            <div style="font-size: 11px; color: var(--muted);">Profit This Month</div>
+                            <div style="font-weight: 700; color: var(--green);">+₹2,500</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: var(--muted);">Win Rate</div>
+                            <div style="font-weight: 700;">58%</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: var(--muted);">Total Trades</div>
+                            <div style="font-weight: 700;">42</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: var(--muted);">Avg Win</div>
+                            <div style="font-weight: 700;">+₹120</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-small btn-success">▶️ Resume</button>
+                        <button class="btn btn-small btn-outline">✏️ Edit</button>
+                        <button class="btn btn-small btn-danger">🗑️ Delete</button>
+                    </div>
+                </div>
+
+                <div class="bot-card error">
+                    <div class="bot-header">
+                        <div>
+                            <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">Breakout Strategy</div>
+                            <div style="font-size: 12px; color: var(--muted);">Symbol: FINNIFTY | Timeframe: 1H</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="bot-status error">
+                                <span class="bot-status-dot"></span>
+                                <span>ERROR</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Since 30 mins ago</div>
+                        </div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; margin-bottom: 12px;">
+                        <div style="font-size: 12px; color: var(--red); font-weight: 600;">⚠️ Connection lost to broker API</div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-small btn-danger">🔄 Retry</button>
+                        <button class="btn btn-small btn-outline">📋 Logs</button>
+                        <button class="btn btn-small btn-danger">🗑️ Delete</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOT PERFORMANCE -->
+            <div class="card">
+                <div class="card-title">📊 Bot Performance History</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Bot Name</th>
+                            <th>Trades</th>
+                            <th>Wins</th>
+                            <th>Losses</th>
+                            <th>P&L</th>
+                            <th>Win Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Jun 20</td>
+                            <td style="color: var(--violet); font-weight: 700;">EMA Crossover</td>
+                            <td>8</td>
+                            <td style="color: var(--green);">5</td>
+                            <td style="color: var(--red);">3</td>
+                            <td style="color: var(--green); font-weight: 700;">+₹850</td>
+                            <td style="color: var(--green);">62%</td>
+                        </tr>
+                        <tr>
+                            <td>Jun 20</td>
+                            <td style="color: var(--violet); font-weight: 700;">MACD Signal</td>
+                            <td>3</td>
+                            <td style="color: var(--green);">1</td>
+                            <td style="color: var(--red);">2</td>
+                            <td style="color: var(--red); font-weight: 700;">-₹150</td>
+                            <td style="color: var(--red);">33%</td>
+                        </tr>
+                        <tr>
+                            <td>Jun 19</td>
+                            <td style="color: var(--violet); font-weight: 700;">EMA Crossover</td>
+                            <td>12</td>
+                            <td style="color: var(--green);">8</td>
+                            <td style="color: var(--red);">4</td>
+                            <td style="color: var(--green); font-weight: 700;">+₹1,200</td>
+                            <td style="color: var(--green);">67%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================== TAB 5: ASSISTANT ================== -->
+        <div id="assistant-tab" class="tab-content">
+            <div class="card">
+                <div class="card-title">💬 Tradosphere AI Assistant</div>
+                <p style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">
+                    Your AI market advisor powered by Claude. Ask questions about NIFTY, BANKNIFTY, trading strategies, and more.
+                </p>
+
+                <div class="chat-container">
+                    <div class="chat-messages">
+                        <div class="chat-message">
+                            <div class="chat-message-content">
+                                Hello! I analyzed NIFTY and found a potential bullish setup. RSI is at 45, EMA9 just crossed above EMA50. Would you like me to generate a signal?
+                            </div>
+                        </div>
+
+                        <div class="chat-message user">
+                            <div class="chat-message-content">
+                                What's the entry price?
+                            </div>
+                        </div>
+
+                        <div class="chat-message">
+                            <div class="chat-message-content">
+                                Based on current price of ₹24,047:
+                                <br>• Entry: ₹24,050 (market)
+                                <br>• Target: ₹24,350 (3% gain)
+                                <br>• Stop Loss: ₹23,750 (2% risk)
+                                <br>• Risk/Reward: 1.5x
+                                <br><br>Confidence: 72% based on technicals.
+                            </div>
+                        </div>
+
+                        <div class="chat-message user">
+                            <div class="chat-message-content">
+                                Can I automate this?
+                            </div>
+                        </div>
+
+                        <div class="chat-message">
+                            <div class="chat-message-content">
+                                Yes! Would you like me to:
+                                <br><button class="btn btn-small" style="margin-top: 8px; margin-right: 4px;">📝 Create Paper Trade</button>
+                                <br><button class="btn btn-small" style="margin-top: 4px; margin-right: 4px;">🤖 Create Bot</button>
+                                <br><button class="btn btn-small" style="margin-top: 4px;">🔔 Set Alert</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-area">
+                        <input type="text" placeholder="Ask about NIFTY, strategies, or create a trade...">
+                        <button class="btn btn-small">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MARKET INSIGHTS SUMMARY -->
+            <div class="card">
+                <div class="card-title">📊 Quick Market Summary</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                    <div style="padding: 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--green); border-radius: 8px;">
+                        <div style="color: var(--green); font-weight: 700; margin-bottom: 4px;">Market Bias</div>
+                        <div style="font-size: 13px; color: var(--text);">🟢 Bullish (Strong)</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(100, 116, 139, 0.1); border: 1px solid var(--border); border-radius: 8px;">
+                        <div style="color: var(--text); font-weight: 700; margin-bottom: 4px;">Volatility</div>
+                        <div style="font-size: 13px; color: var(--muted);">Moderate (VIX: 18)</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(139, 92, 246, 0.1); border: 1px solid var(--violet); border-radius: 8px;">
+                        <div style="color: var(--violet); font-weight: 700; margin-bottom: 4px;">Next Support</div>
+                        <div style="font-size: 13px; color: var(--text);">23,950</div>
+                    </div>
+                </div>
+
+                <div style="padding: 12px; background: rgba(16, 185, 129, 0.1); border-left: 4px solid var(--green); border-radius: 6px;">
+                    <div style="font-size: 12px; color: var(--text); line-height: 1.6;">
+                        <strong>✅ Today's Performance:</strong>
+                        <br>• 09:30 - NIFTY CALL signal ✅ HIT (+₹250)
+                        <br>• 13:15 - BANKNIFTY PUT signal ❌ MISS (-₹100)
+                        <br>• 14:00 - FINNIFTY CALL signal ⏳ PENDING
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // TAB SWITCHING
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            // Add active class to clicked button
+            event.target.classList.add('active');
+
+            // Initialize charts if needed
+            if (tabName === 'dashboard') {
+                setTimeout(() => renderPnlChart(), 100);
+            } else if (tabName === 'research') {
+                setTimeout(() => renderCandleChart(), 100);
+            }
+        }
+
+        // P&L CHART (Dashboard Tab)
+        let pnlChartInstance = null;
+        function renderPnlChart() {
+            const ctx = document.getElementById('pnlChart');
+            if (!ctx) return;
+
+            if (pnlChartInstance) {
+                pnlChartInstance.destroy();
+            }
+
+            pnlChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Today'],
+                    datasets: [{
+                        label: 'Daily P&L',
+                        data: [500, 800, 1200, 1500, 2000, 3500, 5250],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function(value) {
+                                    return '₹' + value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(31, 41, 55, 0.3)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // CANDLE CHART (Research Tab)
+        let candleChartInstance = null;
+        function renderCandleChart() {
+            const ctx = document.getElementById('candleChart');
+            if (!ctx) return;
+
+            if (candleChartInstance) {
+                candleChartInstance.destroy();
+            }
+
+            candleChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['14:00', '14:05', '14:10', '14:15', '14:20', '14:25', '14:30'],
+                    datasets: [{
+                        label: 'NIFTY Price',
+                        data: [24000, 24020, 24050, 24100, 24080, 24120, 24047],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#8b5cf6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function(value) {
+                                    return '₹' + value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(31, 41, 55, 0.3)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize dashboard chart on load
+        window.addEventListener('load', () => {
+            renderPnlChart();
+        });
+    </script>
+</body>
+</html>

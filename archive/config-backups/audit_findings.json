@@ -1,0 +1,92 @@
+{
+  "findings": [
+    {
+      "category": "Signal Generation Bias",
+      "finding": "System A generates ONLY CALL (bullish) signals in test scenarios",
+      "evidence": "Of 10 test scenarios, System A generated 9 signals, all with type CALL and direction BUY. No PUT (bearish) signals generated despite bearish market conditions in Scenarios 2, 6, 8, 9.",
+      "severity": "CRITICAL"
+    },
+    {
+      "category": "Confidence Scoring",
+      "finding": "System A shows mechanically high confidence scores (avg 83.89) independent of market quality",
+      "evidence": "System A averaged 83.89 confidence across diverse scenarios. In Scenario 2 (strong bearish with RSI=75), System A generated 95 confidence CALL signal despite bearish indicators.",
+      "severity": "HIGH"
+    },
+    {
+      "category": "Risk Management",
+      "finding": "System A uses fixed percentage-based stops (2%) regardless of market volatility",
+      "evidence": "All System A signals use rigid 2% SL for strong signals, 1.5% for moderate. No adaptation for volatility, support/resistance, or market regime.",
+      "severity": "HIGH"
+    },
+    {
+      "category": "Signal Generation Quality",
+      "finding": "System B correctly identifies both bullish AND bearish setups",
+      "evidence": "System B generated 5 BUY and 4 SELL signals across 9 generated signals. Correctly identified bearish direction in Scenarios 2, 6, 8, 9 where System A failed.",
+      "severity": "CRITICAL"
+    },
+    {
+      "category": "Risk Assessment",
+      "finding": "System B applies lower confidence scores in marginal setups",
+      "evidence": "System B averaged 76.33 confidence (7.56 points lower than A). In ambiguous scenarios, System B resists high confidence bets.",
+      "severity": "MEDIUM"
+    },
+    {
+      "category": "Entry Strategy",
+      "finding": "System B uses support/resistance levels for entries instead of price offsets",
+      "evidence": "System B entry points align with support/resistance levels. System A uses mechanical price offsets. In volatile markets, S/R-based entries reduce false signals.",
+      "severity": "MEDIUM"
+    },
+    {
+      "category": "Signal Consistency",
+      "finding": "Systems disagree on signal direction 50% of the time",
+      "evidence": "Direction agreement rate: 55.6% when both generate signals. In critical scenarios (2,6,8,9), System A generates BUY while System B correctly identifies SELL.",
+      "severity": "CRITICAL"
+    },
+    {
+      "category": "Execution Quality",
+      "finding": "Average entry price difference: 116.50 points between systems",
+      "evidence": "System A recommends entries at specific price offsets. System B recommends entry zones averaging current price. For NIFTY, this represents 0.5-1% difference.",
+      "severity": "HIGH"
+    },
+    {
+      "category": "Position Sizing",
+      "finding": "System A RRR=1.30 vs System B RRR=1.00. System A targets higher returns.",
+      "evidence": "System A averages 1.30 risk/reward ratio. System B enforces minimum 1:1 RRR with quality filter. System A may pursue unfavorable RRR in high-confidence scenarios.",
+      "severity": "MEDIUM"
+    },
+    {
+      "category": "Performance Claims",
+      "finding": "Claimed 1600-1700 points/week cannot be reproduced with either engine",
+      "evidence": "Testing 10 diverse market scenarios (strong bullish, strong bearish, neutral, extreme RSI, etc.): No reproducible pattern matches claimed weekly gains. Database contains only 77 historical signals.",
+      "severity": "CRITICAL"
+    }
+  ],
+  "warnings": [],
+  "red_flags": [
+    {
+      "flag": "Potential Look-Ahead Bias",
+      "evidence": "System A only generates BUY signals regardless of market direction. This suggests scoring is not capturing true market dynamics, potentially due to training data bias toward uptrends."
+    },
+    {
+      "flag": "Potential Survivorship Bias",
+      "evidence": "If historical claims are based on selected winning signals only, they would overstate actual performance. Only 77 total signals in database limits statistical power."
+    },
+    {
+      "flag": "Potential Data Leakage",
+      "evidence": "System A consistently high confidence (95) on bearish scenarios suggests training may have occurred on biased or incomplete data, or thresholds were set based on observed outcomes."
+    }
+  ],
+  "statistics": {
+    "direction_agreement_rate": 55.6,
+    "direction_disagreement_rate": 44.4,
+    "system_a_avg_confidence": 83.89,
+    "system_b_avg_confidence": 76.33,
+    "confidence_gap": 7.56,
+    "avg_entry_divergence": 116.5,
+    "avg_target_divergence": 611.7,
+    "avg_sl_divergence": 221.88,
+    "system_a_signal_generation_rate": 90.0,
+    "system_b_signal_generation_rate": 90.0,
+    "system_b_selectivity": true
+  }
+}
