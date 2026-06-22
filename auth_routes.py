@@ -1,19 +1,159 @@
 """
-Authentication Routes - Signup, Login, Logout, Token Refresh
+Authentication Routes - Google OAuth, Signup, Login, Logout, Token Refresh
 """
 
 from flask import Blueprint, request, jsonify, g
-from datetime import datetime
+from datetime import datetime, timedelta
+import os
 from user_model import (
     SessionLocal, get_user_by_email, create_user, get_user_by_id,
-    create_session, get_user_sessions
+    create_session, get_user_sessions, User
 )
 from auth_manager import (
     PasswordManager, JWTManager, EmailValidator, AuthDecorator
 )
 from leads_model import SessionLocal as LeadsSessionLocal, create_lead, convert_lead_to_customer, get_lead_by_email
 
+# Google JWT verification
+try:
+    from google.auth.transport import requests
+    from google.oauth2 import id_token
+    GOOGLE_AUTH_AVAILABLE = True
+except ImportError:
+    GOOGLE_AUTH_AVAILABLE = False
+    print("⚠️  google-auth not installed. Google authentication will not work.")
+    print("   Install with: pip install google-auth google-auth-oauthlib google-auth-httplib2")
+
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
+
+
+@auth_bp.route('/google', methods=['POST'])
+def google_auth():
+    """
+    Google OAuth authentication endpoint
+
+    Request:
+    {
+        "credential": "<google_jwt_token>"
+    }
+
+    Response:
+    {
+        "status": "success",
+        "access_token": "<tradosphere_jwt>",
+        "email": "user@example.com",
+        "name": "User Name",
+        "user_id": 123
+    }
+    """
+    try:
+        data = request.get_json()
+
+        if not data or 'credential' not in data:
+            return jsonify({
+                "status": "error",
+                "message": "Missing credential in request"
+            }), 400
+
+        google_token = data.get('credential')
+
+        # Verify Google token
+        if not GOOGLE_AUTH_AVAILABLE:
+            return jsonify({
+                "status": "error",
+                "message": "Google authentication not configured on server"
+            }), 500
+
+        try:
+            # Verify the token with Google
+            # In production, you should specify the client ID
+            idinfo = id_token.verify_oauth2_token(
+                google_token,
+                requests.Request()
+            )
+
+            # Validate token claims
+            if not idinfo.get('email_verified'):
+                return jsonify({
+                    "status": "error",
+                    "message": "Email not verified by Google"
+                }), 401
+
+            # Extract user information
+            email = idinfo.get('email')
+            name = idinfo.get('name', '')
+            picture_url = idinfo.get('picture', '')
+            google_id = idinfo.get('sub')  # Google's unique user ID
+
+            if not email:
+                return jsonify({
+                    "status": "error",
+                    "message": "Email not available in Google token"
+                }), 401
+
+            print(f"✅ Google token verified for: {email}")
+
+        except ValueError as e:
+            # Invalid token
+            print(f"❌ Invalid Google token: {str(e)}")
+            return jsonify({
+                "status": "error",
+                "message": "Invalid Google token"
+            }), 401
+
+        # Get or create user
+        db = SessionLocal()
+        try:
+            user = get_user_by_email(db, email)
+
+            if not user:
+                # Create new user from Google info
+                print(f"👤 Creating new user: {email}")
+                user = create_user(
+                    db,
+                    email=email,
+                    name=name,
+                    google_id=google_id,
+                    picture_url=picture_url
+                )
+                print(f"✅ User created: {user.id}")
+            else:
+                # Update last login
+                user.last_login = datetime.utcnow()
+                db.commit()
+                print(f"✅ User already exists: {user.id}")
+
+            # Generate Tradosphere JWT
+            jwt_manager = JWTManager()
+            token_data = {
+                'user_id': user.id,
+                'email': user.email,
+                'name': user.name or ''
+            }
+            access_token = jwt_manager.generate_token(token_data, expires_in=30*24*3600)  # 30 days
+
+            print(f"🔐 Generated JWT for user: {user.id}")
+
+            return jsonify({
+                "status": "success",
+                "access_token": access_token,
+                "email": user.email,
+                "name": user.name,
+                "user_id": user.id
+            }), 200
+
+        finally:
+            db.close()
+
+    except Exception as e:
+        print(f"❌ Google auth error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+        return jsonify({
+            "status": "error",
+            "message": f"Authentication failed: {str(e)}"
+        }), 500
 
 
 @auth_bp.route('/signup', methods=['POST'])

@@ -22,12 +22,19 @@ Base = declarative_base()
 
 
 class User(Base):
-    """User account model"""
+    """User account model - Google OAuth V1"""
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
-    password_hash = Column(String(255), nullable=False)
+    name = Column(String(255), nullable=True)  # Full name from Google
+
+    # Google OAuth fields
+    google_id = Column(String(255), unique=True, index=True, nullable=True)  # Google's unique ID
+    picture_url = Column(String(500), nullable=True)  # Profile picture URL from Google
+
+    # Legacy/optional fields for future use
+    password_hash = Column(String(255), nullable=True)  # Optional, for migration
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
     phone = Column(String(20), nullable=True)
@@ -37,7 +44,7 @@ class User(Base):
     # Account status
     is_active = Column(Boolean, default=True, index=True)
     is_admin = Column(Boolean, default=False)
-    is_verified = Column(Boolean, default=False)
+    is_verified = Column(Boolean, default=True)  # Always True for Google auth
 
     # Profile
     profile_pic = Column(String(255), nullable=True)
@@ -178,13 +185,19 @@ def get_user_db():
 
 
 # User operations
-def create_user(db, email: str, password_hash: str, first_name: str = None, last_name: str = None) -> User:
-    """Create new user"""
+def create_user(db, email: str, password_hash: str = None, first_name: str = None,
+                last_name: str = None, name: str = None, google_id: str = None,
+                picture_url: str = None) -> User:
+    """Create new user - supports both password and Google OAuth"""
     user = User(
         email=email,
         password_hash=password_hash,
+        name=name,
+        google_id=google_id,
+        picture_url=picture_url,
         first_name=first_name,
-        last_name=last_name
+        last_name=last_name,
+        is_verified=True if google_id else False
     )
     db.add(user)
     db.commit()
