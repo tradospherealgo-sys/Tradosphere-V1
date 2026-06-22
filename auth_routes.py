@@ -66,10 +66,12 @@ def google_auth():
 
         try:
             # Verify the token with Google
-            # In production, you should specify the client ID
+            google_client_id = os.getenv("GOOGLE_CLIENT_ID")
+
             idinfo = id_token.verify_oauth2_token(
                 google_token,
-                requests.Request()
+                requests.Request(),
+                cid=google_client_id  # Validate token is for our app
             )
 
             # Validate token claims
@@ -124,13 +126,8 @@ def google_auth():
                 print(f"✅ User already exists: {user.id}")
 
             # Generate Tradosphere JWT
-            jwt_manager = JWTManager()
-            token_data = {
-                'user_id': user.id,
-                'email': user.email,
-                'name': user.name or ''
-            }
-            access_token = jwt_manager.generate_token(token_data, expires_in=30*24*3600)  # 30 days
+            tokens = JWTManager.generate_tokens(user.id, user.email)
+            access_token = tokens['access_token']
 
             print(f"🔐 Generated JWT for user: {user.id}")
 
