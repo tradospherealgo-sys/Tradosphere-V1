@@ -33,6 +33,14 @@
       }
     },
     {
+      "src": "/login",
+      "dest": "/login_simple.html",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
       "src": "/(.*)",
       "dest": "dashboard_live.html",
       "headers": {
