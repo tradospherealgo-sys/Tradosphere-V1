@@ -10,7 +10,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import os
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///tradosphere_saas.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///tradosphere.db")
 
 # Support PostgreSQL in production
 if DATABASE_URL.startswith("postgres://"):
