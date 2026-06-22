@@ -16,6 +16,14 @@
   },
   "routes": [
     {
+      "src": "/config.js",
+      "dest": "/config.js",
+      "headers": {
+        "Cache-Control": "public, max-age=3600, must-revalidate",
+        "Content-Type": "application/javascript"
+      }
+    },
+    {
       "src": "/api/(.*)",
       "status": 404,
       "headers": {
