@@ -1,5 +1,8 @@
 {
-  "version": 2,
+  "version": 3,
+  "name": "tradosphere-frontend",
+  "buildCommand": "echo 'Frontend static files ready'",
+  "outputDirectory": ".",
   "routes": [
     {
       "src": "/config.js",
@@ -10,12 +13,11 @@
       }
     },
     {
-      "src": "/login",
-      "dest": "/login_simple.html"
-    },
-    {
       "src": "/api/(.*)",
-      "status": 404
+      "status": 404,
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
     },
     {
       "src": "/(.*\\.(?:css|js|json|ico|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot))",
@@ -24,8 +26,20 @@
       }
     },
     {
+      "src": "/login",
+      "dest": "/login_simple.html",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
       "src": "/(.*)",
-      "dest": "/dashboard_live.html"
+      "dest": "dashboard_live.html",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "X-Content-Type-Options": "nosniff"
+      }
     }
   ],
   "headers": [
@@ -41,8 +55,33 @@
           "value": "DENY"
         },
         {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-CSRF-Token,X-Requested-With,Accept,Accept-Version,Content-Length,Content-MD5,Content-Type,Date,X-Api-Version,Authorization"
         }
       ]
     }
