@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 2,
   "name": "tradosphere-frontend",
   "buildCommand": "echo 'Frontend static files ready'",
   "outputDirectory": ".",
@@ -35,7 +35,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "dashboard_live.html",
+      "dest": "/dashboard_live.html",
       "headers": {
         "Cache-Control": "no-cache, no-store, must-revalidate",
         "X-Content-Type-Options": "nosniff"
