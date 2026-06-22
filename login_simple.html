@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tradosphere - Login</title>
+    <!-- Configuration: Backend API URL -->
+    <script src="config.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -318,7 +320,7 @@
     </div>
 
     <script>
-        const API = window.location.origin;
+        const API = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'https://tradosphere-v1-production.up.railway.app';
 
         async function loginAdmin() {
             await login('admin@tradosphere.ai', 'admin123456', 'admin');

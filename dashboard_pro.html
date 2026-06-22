@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tradosphere - Professional Trading Dashboard</title>
+    <!-- Configuration: Backend API URL -->
+    <script src="config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <style>
         * {
@@ -1113,7 +1115,7 @@
     </main>
 
     <script>
-        const API = window.location.origin;
+        const API = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'https://tradosphere-v1-production.up.railway.app';
         const TOKEN = localStorage.getItem('access_token');
 
         // Data storage

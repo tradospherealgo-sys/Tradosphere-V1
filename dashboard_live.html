@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tradosphere - Angel One Style Dashboard</title>
+    <!-- Configuration: Backend API URL -->
+    <script src="config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1024,7 +1026,8 @@
     </div>
 
     <script>
-        const API = window.location.origin;
+        // Use centralized API configuration from config.js
+        const API = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'https://tradosphere-v1-production.up.railway.app';
         const TOKEN = localStorage.getItem('access_token');
         let selectedIndex = 'NIFTY';
         let mainChart = null;
