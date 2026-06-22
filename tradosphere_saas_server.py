@@ -1338,6 +1338,31 @@ def generate_quick_signals():
         }), 500
 
 
+# ===== STATIC FILE SERVING =====
+@app.route('/dashboard_live.html', methods=['GET'])
+def serve_dashboard_html():
+    """Serve dashboard_live.html directly"""
+    html_content = get_html_file('dashboard_live.html')
+    if html_content:
+        return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    return jsonify({
+        "status": "error",
+        "message": "Dashboard not found"
+    }), 404
+
+
+@app.route('/', methods=['GET'])
+def serve_root():
+    """Serve dashboard at root path"""
+    html_content = get_html_file('dashboard_live.html')
+    if html_content:
+        return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    return jsonify({
+        "status": "error",
+        "message": "Dashboard not found"
+    }), 404
+
+
 # ===== ERROR HANDLERS =====
 @app.errorhandler(404)
 def not_found(e):
