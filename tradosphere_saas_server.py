@@ -1244,8 +1244,8 @@ def get_dashboard_overview():
 @app.route('/api/generate', methods=['POST'])
 def generate_quick_signals():
     """
-    Generate realistic trading signals without requiring broker authentication
-    Works immediately when deployed
+    Generate trading signals with REAL LIVE market prices from Angel One
+    Falls back to mock data if broker connection unavailable
     Returns proper signal format with entry, target, stoploss, confidence
     """
     try:
@@ -1259,12 +1259,59 @@ def generate_quick_signals():
         if not symbols:
             symbols = ['NIFTY', 'BANKNIFTY', 'FINNIFTY']
 
-        # Current realistic market prices (as of market hours)
-        market_prices = {
-            'NIFTY': 24047.50,
-            'BANKNIFTY': 57489.75,
-            'FINNIFTY': 18950.00
-        }
+        # Get REAL live market prices from Angel One
+        market_prices = {}
+        price_source = "live"
+
+        print(f"🔍 DEBUG: market is None? {market is None}")
+        print(f"🔍 DEBUG: market type: {type(market)}")
+        if market:
+            print(f"🔍 DEBUG: market.is_authenticated()? {market.is_authenticated()}")
+
+        if market and market.is_authenticated():
+            try:
+                # Try to get real prices from Angel One API
+                nifty_data = market.get_nifty_price()
+                if nifty_data:
+                    market_prices['NIFTY'] = nifty_data.get('ltp', 24047.50)
+
+                banknifty_data = market.get_banknifty_price()
+                if banknifty_data:
+                    market_prices['BANKNIFTY'] = banknifty_data.get('ltp', 57489.75)
+
+                finnifty_data = market.get_finnifty_price()
+                if finnifty_data:
+                    market_prices['FINNIFTY'] = finnifty_data.get('ltp', 18950.00)
+
+                # If we got at least some real prices, use them
+                if market_prices:
+                    price_source = "live_angel_one"
+                    print(f"✅ Using REAL live prices from Angel One: {market_prices}")
+                else:
+                    # Fall back to defaults if API didn't return prices
+                    market_prices = {
+                        'NIFTY': 24047.50,
+                        'BANKNIFTY': 57489.75,
+                        'FINNIFTY': 18950.00
+                    }
+                    price_source = "fallback"
+            except Exception as e:
+                print(f"⚠️  Could not get real prices from Angel One: {e}")
+                # Fall back to mock data
+                market_prices = {
+                    'NIFTY': 24047.50,
+                    'BANKNIFTY': 57489.75,
+                    'FINNIFTY': 18950.00
+                }
+                price_source = "fallback"
+        else:
+            # Broker not connected, use fallback prices
+            market_prices = {
+                'NIFTY': 24047.50,
+                'BANKNIFTY': 57489.75,
+                'FINNIFTY': 18950.00
+            }
+            price_source = "fallback"
 
         signals = []
 
@@ -1323,6 +1370,7 @@ def generate_quick_signals():
         return jsonify({
             "status": "success",
             "message": f"{len(signals)} signals generated successfully",
+            "price_source": price_source,  # 'live_angel_one', 'fallback', or 'live'
             "signals": signals,
             "timestamp": datetime.utcnow().isoformat() + 'Z'
         }), 200
