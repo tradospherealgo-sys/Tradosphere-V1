@@ -1,0 +1,63 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "buildCommand": "pip install --no-cache-dir -r requirements.txt",
+    "startCommand": "python db_init.py && gunicorn --workers 4 --worker-class sync --worker-connections 1000 --max-requests 1000 --max-requests-jitter 100 --timeout 60 --graceful-timeout 30 --bind 0.0.0.0:$PORT tradosphere_saas_server:app"
+  },
+  "deploy": {
+    "startCommand": "gunicorn --workers 4 --worker-class sync --worker-connections 1000 --max-requests 1000 --max-requests-jitter 100 --timeout 60 --graceful-timeout 30 --bind 0.0.0.0:$PORT tradosphere_saas_server:app",
+    "restartPolicyType": "on_failure",
+    "restartPolicyMaxRetries": 5,
+    "healthchecks": {
+      "readiness": {
+        "initialDelaySeconds": 30,
+        "periodSeconds": 10,
+        "timeoutSeconds": 5,
+        "successThreshold": 1,
+        "failureThreshold": 3,
+        "httpGet": {
+          "path": "/api/health",
+          "port": 8000
+        }
+      }
+    }
+  },
+  "variables": {
+    "FLASK_ENV": {
+      "description": "Flask environment",
+      "value": "production"
+    },
+    "FLASK_SECRET_KEY": {
+      "description": "Flask secret key (generate with: python -c 'import secrets; print(secrets.token_hex(32))')",
+      "value": "CHANGE_ME_IN_RAILWAY_DASHBOARD"
+    },
+    "ANGEL_ONE_API_KEY": {
+      "description": "Angel One SmartAPI Key",
+      "value": ""
+    },
+    "ANGEL_ONE_CLIENT_CODE": {
+      "description": "Angel One Client Code",
+      "value": ""
+    },
+    "ANGEL_ONE_PIN": {
+      "description": "Angel One Account PIN",
+      "value": ""
+    },
+    "ANGEL_ONE_TOTP_SECRET": {
+      "description": "Angel One TOTP Secret Key",
+      "value": ""
+    },
+    "DATABASE_URL": {
+      "description": "Database URL - use PostgreSQL in production",
+      "value": "postgresql://user:password@host:5432/tradosphere"
+    },
+    "LOG_LEVEL": {
+      "description": "Logging level",
+      "value": "INFO"
+    },
+    "WORKERS": {
+      "description": "Number of Gunicorn workers",
+      "value": "4"
+    }
+  }
+}

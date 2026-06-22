@@ -33,9 +33,10 @@ def init_database():
 
     try:
         # Import database components
-        logger.info("1. Importing database module...")
-        from database import engine, Base, Signal
-        logger.info("   ✓ Database module imported")
+        logger.info("1. Importing database modules...")
+        from database import engine, Base as DB_Base, Signal
+        from user_model import Base as User_Base
+        logger.info("   ✓ Database modules imported")
 
     except Exception as e:
         logger.error(f"   ✗ Failed to import database: {e}")
@@ -58,7 +59,8 @@ def init_database():
         # Create tables
         logger.info("")
         logger.info("3. Creating/updating schema...")
-        Base.metadata.create_all(bind=engine)
+        DB_Base.metadata.create_all(bind=engine)
+        User_Base.metadata.create_all(bind=engine)
         logger.info("   ✓ Schema creation complete")
 
     except Exception as e:
@@ -96,6 +98,26 @@ def init_database():
 
         # List columns
         for col in columns:
+            logger.info(f"     • {col['name']}")
+
+        # Check users table
+        if 'users' not in tables:
+            logger.error("   ✗ Users table not found!")
+            return False
+
+        users_columns = inspector.get_columns('users')
+        logger.info(f"   ✓ Users table: {len(users_columns)} columns")
+
+        # Check for password_hash column (CRITICAL)
+        column_names = [col['name'] for col in users_columns]
+        if 'password_hash' not in column_names:
+            logger.error("   ✗ CRITICAL: Users table missing password_hash column!")
+            logger.error(f"     Found columns: {', '.join(column_names)}")
+            logger.error("     This will cause 'no such column: users.password_hash' errors!")
+            return False
+
+        # List user columns
+        for col in users_columns:
             logger.info(f"     • {col['name']}")
 
     except Exception as e:

@@ -99,46 +99,11 @@ class Trade(Base):
             "closed_at": self.closed_at.isoformat() if self.closed_at else None
         }
 
-class User(Base):
-    """User model"""
-    __tablename__ = "users"
+# NOTE: User model is defined in user_model.py (with full auth fields)
+# DO NOT define User here - use user_model.User instead
+# This prevents schema conflicts between trading and auth systems
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    is_admin = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    broker_accounts = relationship("BrokerAccount", back_populates="user")
-
-    def to_dict(self) -> Dict:
-        return {
-            "id": self.id,
-            "email": self.email,
-            "is_admin": self.is_admin,
-            "created_at": self.created_at.isoformat() if self.created_at else None
-        }
-
-class BrokerAccount(Base):
-    """Broker connection model"""
-    __tablename__ = "broker_accounts"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    broker_type = Column(String)
-    api_key = Column(String)
-    api_secret = Column(String)
-    client_code = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    user = relationship("User", back_populates="broker_accounts")
-
-    def to_dict(self) -> Dict:
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "broker_type": self.broker_type,
-            "created_at": self.created_at.isoformat() if self.created_at else None
-        }
+# BrokerAccount removed - use APIKey model from user_model.py instead
 
 class MarketSnapshot(Base):
     """Live market price snapshot"""

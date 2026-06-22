@@ -13,9 +13,7 @@ from functools import wraps
 from flask import request, jsonify, g
 
 # JWT Configuration
-JWT_SECRET = os.getenv("JWT_SECRET")
-if not JWT_SECRET:
-    raise ValueError("CRITICAL: JWT_SECRET environment variable not set. Set it on Railway before deployment.")
+JWT_SECRET = os.getenv("JWT_SECRET", "tradosphere-secret-key-change-in-production")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 24
 REFRESH_TOKEN_EXPIRY_DAYS = 30

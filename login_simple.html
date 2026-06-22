@@ -6,6 +6,8 @@
     <title>Tradosphere - Login</title>
     <!-- Configuration: Backend API URL -->
     <script src="config.js"></script>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -14,9 +16,10 @@
             --card: #1A2332;
             --border: #374151;
             --accent: #6366F1;
-            --admin: #8B5CF6;
             --text: #E5E7EB;
             --muted: #9CA3AF;
+            --success: #10B981;
+            --error: #EF4444;
         }
 
         body {
@@ -32,12 +35,12 @@
 
         .container {
             width: 100%;
-            max-width: 900px;
+            max-width: 500px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 60px;
+            margin-bottom: 50px;
         }
 
         .logo {
@@ -50,12 +53,13 @@
         .subtitle {
             font-size: 18px;
             color: var(--muted);
+            margin-bottom: 30px;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
+        .tagline {
+            font-size: 14px;
+            color: var(--muted);
+            font-style: italic;
         }
 
         .card {
@@ -64,66 +68,38 @@
             border-radius: 16px;
             padding: 50px 40px;
             text-align: center;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-
-        .card:hover {
-            border-color: var(--accent);
-            box-shadow: 0 0 40px rgba(99, 102, 241, 0.2);
-            transform: translateY(-5px);
-        }
-
-        .card.admin:hover {
-            border-color: var(--admin);
-            box-shadow: 0 0 40px rgba(139, 92, 246, 0.2);
-        }
-
-        .card-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
         }
 
         .card-title {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
             margin-bottom: 15px;
+            color: var(--text);
         }
 
         .card-description {
             font-size: 14px;
             color: var(--muted);
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             line-height: 1.6;
         }
 
-        .card-details {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 20px;
-            border-radius: 8px;
+        .google-button-container {
             margin-bottom: 30px;
-            text-align: left;
-            font-size: 13px;
         }
 
-        .card-details p {
-            margin-bottom: 8px;
+        /* Style Google Sign-In button */
+        #g_id_onload {
+            width: 100%;
         }
 
-        .label {
-            color: var(--muted);
-            font-weight: 600;
+        .g_id_signin {
+            width: 100%;
+            display: flex;
+            justify-content: center;
         }
 
-        .value {
-            color: var(--accent);
-            font-family: 'Monaco', monospace;
-        }
-
-        .card.admin .value {
-            color: var(--admin);
-        }
-
+        /* Fallback button if Google button doesn't load */
         .btn {
             width: 100%;
             padding: 16px 32px;
@@ -134,22 +110,14 @@
             cursor: pointer;
             transition: all 0.3s;
             color: white;
-        }
-
-        .btn-admin {
-            background: var(--admin);
-        }
-
-        .btn-admin:hover {
-            background: rgba(139, 92, 246, 0.9);
-            transform: scale(1.02);
-        }
-
-        .btn-user {
             background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
         }
 
-        .btn-user:hover {
+        .btn:hover {
             background: rgba(99, 102, 241, 0.9);
             transform: scale(1.02);
         }
@@ -157,6 +125,11 @@
         .btn:disabled {
             opacity: 0.7;
             cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        .btn-icon {
+            font-size: 20px;
         }
 
         .loading {
@@ -180,50 +153,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        .demo-section {
-            margin-top: 60px;
-            padding-top: 40px;
-            border-top: 1px solid var(--border);
-            text-align: center;
-        }
-
-        .demo-title {
-            font-size: 16px;
-            color: var(--muted);
-            margin-bottom: 20px;
-        }
-
-        .demo-btn {
-            display: inline-block;
-            padding: 12px 30px;
-            background: rgba(99, 102, 241, 0.1);
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.3s;
-            font-weight: 600;
-        }
-
-        .demo-btn:hover {
-            background: rgba(99, 102, 241, 0.2);
-        }
-
-        @media (max-width: 768px) {
-            .grid {
-                grid-template-columns: 1fr;
-                gap: 30px;
-            }
-
-            .logo {
-                font-size: 36px;
-            }
-
-            .card {
-                padding: 40px 30px;
-            }
-        }
-
         .status {
             text-align: center;
             padding: 12px;
@@ -239,14 +168,43 @@
 
         .status.success {
             background: rgba(16, 185, 129, 0.1);
-            border: 1px solid #10B981;
-            color: #10B981;
+            border: 1px solid var(--success);
+            color: var(--success);
         }
 
         .status.error {
             background: rgba(239, 68, 68, 0.1);
-            border: 1px solid #EF4444;
-            color: #EF4444;
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+
+        .info {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+        }
+
+        .info-title {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .info-text {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 36px;
+            }
+
+            .card {
+                padding: 40px 30px;
+            }
         }
     </style>
 </head>
@@ -255,137 +213,152 @@
         <div class="header">
             <div class="logo">🌍 TRADOSPHERE</div>
             <div class="subtitle">Trading Intelligence Platform</div>
+            <div class="tagline">Sign in with your Google account to get started</div>
         </div>
 
-        <div class="grid">
-            <!-- ADMIN LOGIN -->
-            <div class="card admin">
-                <div class="card-icon">👑</div>
-                <div class="card-title">Admin Dashboard</div>
-                <div class="card-description">
-                    Full platform management<br>
-                    View all users & analytics<br>
-                    Track revenue & metrics
-                </div>
-
-                <div class="card-details">
-                    <p><span class="label">Email:</span></p>
-                    <p class="value">admin@tradosphere.ai</p>
-                    <p style="margin-top: 10px;"><span class="label">Password:</span></p>
-                    <p class="value">admin123456</p>
-                </div>
-
-                <button class="btn btn-admin" onclick="loginAdmin()" id="adminBtn">
-                    👑 Login as Admin
-                </button>
-                <div class="loading" id="adminLoading">
-                    <div class="spinner"></div>
-                    <p style="margin-top: 10px;">Logging in...</p>
-                </div>
-                <div class="status" id="adminStatus"></div>
+        <div class="card">
+            <div class="card-title">Welcome Back</div>
+            <div class="card-description">
+                Sign in to access your trading dashboard,<br>
+                signals, and performance analytics
             </div>
 
-            <!-- USER LOGIN -->
-            <div class="card">
-                <div class="card-icon">👤</div>
-                <div class="card-title">User Dashboard</div>
-                <div class="card-description">
-                    Personal account management<br>
-                    View your signals & performance<br>
-                    Manage subscription
+            <!-- Google Sign-In Button Container -->
+            <div class="google-button-container">
+                <div id="g_id_onload"
+                     data-client_id="810958107275-e45cqfkhgei54ip0t56d3q6q3lp6m5r0.apps.googleusercontent.com"
+                     data-callback="handleCredentialResponse">
                 </div>
-
-                <div class="card-details">
-                    <p><span class="label">Email:</span></p>
-                    <p class="value">sarah@company.com</p>
-                    <p style="margin-top: 10px;"><span class="label">Password:</span></p>
-                    <p class="value">securepass123</p>
-                </div>
-
-                <button class="btn btn-user" onclick="loginUser()" id="userBtn">
-                    👤 Login as User
-                </button>
-                <div class="loading" id="userLoading">
-                    <div class="spinner"></div>
-                    <p style="margin-top: 10px;">Logging in...</p>
-                </div>
-                <div class="status" id="userStatus"></div>
+                <div class="g_id_signin" data-type="standard"></div>
             </div>
-        </div>
 
-        <div class="demo-section">
-            <div class="demo-title">Or try the demo (no login needed)</div>
-            <a href="/demo" class="demo-btn">📊 View Demo Dashboard</a>
+            <!-- Status Messages -->
+            <div class="loading" id="loadingStatus">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px;">Verifying your credentials...</p>
+            </div>
+            <div class="status" id="errorStatus"></div>
+
+            <!-- Info Section -->
+            <div class="info">
+                <div class="info-title">🔒 Secure Authentication</div>
+                <div class="info-text">
+                    We use Google Identity Services for secure, passwordless authentication.
+                    Your credentials are verified directly with Google.
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        const API = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'https://tradosphere-v1-production.up.railway.app';
+        // Define API base URL with fallback chain
+        const API = (typeof API_BASE_URL !== 'undefined')
+            ? API_BASE_URL
+            : 'https://tradosphere-v1-production.up.railway.app';
 
-        async function loginAdmin() {
-            await login('admin@tradosphere.ai', 'admin123456', 'admin');
+        // Log API base URL for debugging
+        console.log('🌐 API Base URL:', API);
+
+        /**
+         * Handle Google credential response
+         * Called when user selects their Google account
+         */
+        function handleCredentialResponse(response) {
+            console.log('✅ Received Google credential');
+
+            // Show loading state
+            document.getElementById('loadingStatus').style.display = 'block';
+            document.getElementById('errorStatus').style.display = 'none';
+
+            // Send credential to backend for verification
+            verifyGoogleToken(response.credential);
         }
 
-        async function loginUser() {
-            await login('sarah@company.com', 'securepass123', 'user');
-        }
-
-        async function login(email, password, role) {
-            const btn = document.getElementById(role === 'admin' ? 'adminBtn' : 'userBtn');
-            const loading = document.getElementById(role === 'admin' ? 'adminLoading' : 'userLoading');
-            const status = document.getElementById(role === 'admin' ? 'adminStatus' : 'userStatus');
-
-            btn.disabled = true;
-            loading.style.display = 'block';
-            status.classList.remove('show', 'success', 'error');
-
+        /**
+         * Send Google token to backend for verification
+         * @param {string} googleToken - JWT token from Google
+         */
+        async function verifyGoogleToken(googleToken) {
             try {
-                const response = await fetch(`${API}/api/auth/login`, {
+                console.log('📤 Sending Google token to backend...');
+
+                const response = await fetch(`${API}/api/auth/google`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        credential: googleToken
+                    })
                 });
 
                 const data = await response.json();
+                console.log('📥 Backend response:', data);
 
                 if (!response.ok) {
-                    throw new Error(data.message || 'Login failed');
+                    throw new Error(data.message || 'Authentication failed');
                 }
 
-                // Save tokens
-                localStorage.setItem('access_token', data.data.tokens.access_token);
-                localStorage.setItem('refresh_token', data.data.tokens.refresh_token);
-                localStorage.setItem('user', JSON.stringify(data.data.user));
+                // Success: Store credentials and redirect
+                if (data.access_token) {
+                    console.log('✅ Authentication successful');
 
-                // Show success
-                status.classList.add('show', 'success');
-                status.textContent = `✅ Login successful! Redirecting to ${role === 'admin' ? 'admin' : 'user'} dashboard...`;
+                    // Store JWT token in localStorage
+                    localStorage.setItem('access_token', data.access_token);
 
-                // Redirect
-                setTimeout(() => {
-                    window.location.href = '/dashboard';
-                }, 1000);
+                    // Store user info
+                    if (data.email) localStorage.setItem('user_email', data.email);
+                    if (data.name) localStorage.setItem('user_name', data.name);
+                    if (data.user_id) localStorage.setItem('user_id', data.user_id);
+
+                    console.log('📍 Stored credentials in localStorage');
+                    console.log('➡️  Redirecting to dashboard...');
+
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 500);
+                } else {
+                    throw new Error('No access token in response');
+                }
 
             } catch (error) {
-                btn.disabled = false;
-                loading.style.display = 'none';
-                status.classList.add('show', 'error');
-                status.textContent = `❌ ${error.message}`;
-                console.error('Login error:', error);
+                console.error('❌ Authentication error:', error);
+
+                // Hide loading, show error
+                document.getElementById('loadingStatus').style.display = 'none';
+
+                const errorDiv = document.getElementById('errorStatus');
+                errorDiv.textContent = error.message || 'Authentication failed. Please try again.';
+                errorDiv.className = 'status show error';
             }
         }
 
-        // Check if already logged in (with delay to prevent redirect loop)
+        /**
+         * Initialize Google Sign-In
+         * Must be called after Google library loads
+         */
+        function initializeGoogleSignIn() {
+            console.log('🔧 Initializing Google Sign-In...');
+
+            // Check if google object is available
+            if (!window.google) {
+                console.error('❌ Google library not loaded');
+                return;
+            }
+
+            // Set client ID (will be set via config or HTML attribute)
+            console.log('✅ Google Sign-In initialized');
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', initializeGoogleSignIn);
+
+        // Listen for Google library load
         window.addEventListener('load', () => {
-            // Only redirect if we're not already on dashboard
-            if (localStorage.getItem('access_token') && window.location.pathname === '/login') {
-                // Add small delay and verify token before redirecting
-                setTimeout(() => {
-                    const token = localStorage.getItem('access_token');
-                    if (token && token.length > 10) {
-                        window.location.href = '/dashboard';
-                    }
-                }, 500);
+            // Google library should be loaded by now
+            if (window.google && window.google.accounts) {
+                console.log('✅ Google accounts library loaded');
             }
         });
     </script>
