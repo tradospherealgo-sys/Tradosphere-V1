@@ -6,6 +6,8 @@ Phase 2: Subscriptions, Email Notifications, Multi-broker Support
 
 import os
 import sys
+import threading
+import time
 from datetime import datetime
 from flask import Flask, jsonify, request, send_file, g
 from flask_cors import CORS
@@ -75,10 +77,23 @@ MultiTenantMiddleware.register_tenant_middleware(app) if hasattr(MultiTenantMidd
 
 # Global market data instance
 market = None
+_market_initialized = False
 
 def init_market_data():
-    """Initialize market data with credentials"""
-    global market
+    """Initialize market data with credentials
+
+    NOTE: Gunicorn with multiple workers will attempt initialization in each worker.
+    Angel One has rate limits on authentication. We catch auth failures gracefully
+    and allow workers to boot without broker. Broker will auto-retry on first request.
+    """
+    global market, _market_initialized
+
+    # Prevent multiple initialization attempts within same worker
+    if _market_initialized:
+        return
+
+    _market_initialized = True
+
     try:
         api_key = os.getenv("ANGEL_ONE_API_KEY", "")
         client_code = os.getenv("ANGEL_ONE_CLIENT_CODE", "")
@@ -90,13 +105,82 @@ def init_market_data():
             market = None
             return
 
+        # Create market data instance (handles auth internally)
+        # This may fail with rate limit on multiple workers
         market = AngelOneMarketData(api_key, client_code, pin, totp_secret)
-        print("✅ Angel One market data initialized")
+        print("✅ Angel One market data initialized successfully")
     except Exception as e:
-        print(f"⚠️  Market data initialization error: {e}")
+        # CRITICAL FIX: Catch auth failures and allow worker to boot
+        # Instead of crashing, gracefully degrade to fallback prices
+        print(f"⚠️  Market data initialization failed: {str(e)}")
+
+        # Check if it's a rate limit error
+        if "rate" in str(e).lower() or "429" in str(e) or "access denied" in str(e).lower():
+            print("⚠️  Angel One rate limit detected (multiple worker auth attempts)")
+            print("⚠️  Worker will boot without broker connection")
+            print("⚠️  Fallback prices will be used until broker recovers")
+        else:
+            print(f"⚠️  Error details: {str(e)}")
+
+        # Set market to None to trigger fallback behavior
+        # This allows worker to boot and serve requests with fallback data
         market = None
 
+# Initialize at module import time
+# Multiple workers will each attempt this, but with graceful degradation
 init_market_data()
+
+def _retry_broker_connection():
+    """Background thread: retry broker connection if initial auth failed
+
+    This helps recover from Angel One rate limiting by retrying after 30s delay.
+    Runs in background without blocking worker boot.
+    """
+    global market, _market_initialized
+
+    if market is not None:
+        # Broker already connected, nothing to do
+        return
+
+    # Wait before retrying to avoid immediate rate limiting
+    time.sleep(30)
+
+    max_retries = 3
+    retry_count = 0
+
+    while market is None and retry_count < max_retries:
+        retry_count += 1
+        print(f"\n🔄 Broker connection retry {retry_count}/{max_retries}...")
+
+        try:
+            api_key = os.getenv("ANGEL_ONE_API_KEY", "")
+            client_code = os.getenv("ANGEL_ONE_CLIENT_CODE", "")
+            pin = os.getenv("ANGEL_ONE_PIN", "")
+            totp_secret = os.getenv("ANGEL_ONE_TOTP_SECRET", "")
+
+            if not api_key or not client_code or not pin:
+                print("⚠️  Credentials still not configured, giving up")
+                break
+
+            market = AngelOneMarketData(api_key, client_code, pin, totp_secret)
+            print("✅ Broker reconnected successfully on retry!")
+            break
+
+        except Exception as e:
+            print(f"⚠️  Retry {retry_count} failed: {str(e)[:100]}")
+            if retry_count < max_retries:
+                wait_time = 30 * retry_count  # Exponential backoff: 30s, 60s, 90s
+                print(f"   Waiting {wait_time}s before next retry...")
+                time.sleep(wait_time)
+
+    if market is None and retry_count >= max_retries:
+        print(f"❌ Broker connection failed after {max_retries} retries, will use fallback prices")
+
+# Start background retry thread (only if initial init failed)
+if market is None:
+    print("🔄 Starting background broker reconnection thread...")
+    retry_thread = threading.Thread(target=_retry_broker_connection, daemon=True)
+    retry_thread.start()
 
 # Helper function to serve HTML files
 def get_html_file(filename):
