@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradosphere - Settings</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .navbar .brand { font-size: 24px; font-weight: bold; margin-right: 40px; }
+        .navbar a { color: white; text-decoration: none; margin: 0 15px; transition: opacity 0.3s; }
+        .navbar a:hover { opacity: 0.8; }
+        .navbar .user-menu { float: right; }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 30px; }
+
+        .header { margin-bottom: 40px; }
+        .header h1 { font-size: 32px; color: #333; margin-bottom: 10px; }
+
+        .settings-layout { display: grid; grid-template-columns: 250px 1fr; gap: 30px; }
+        .settings-nav { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); height: fit-content; }
+        .settings-nav button { width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; color: #666; font-size: 14px; border-left: 3px solid transparent; margin-bottom: 5px; transition: all 0.3s; }
+        .settings-nav button:hover { background: #f9fafb; color: #667eea; }
+        .settings-nav button.active { background: #f0f4ff; color: #667eea; border-left-color: #667eea; }
+
+        .settings-content { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .settings-section { display: none; }
+        .settings-section.active { display: block; }
+
+        .section-title { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 25px; }
+        .section-description { color: #666; margin-bottom: 20px; font-size: 14px; }
+
+        .form-group { margin-bottom: 25px; }
+        label { display: block; color: #333; font-size: 14px; margin-bottom: 8px; font-weight: 500; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        .toggle { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f9fafb; border-radius: 6px; }
+        .toggle label { margin: 0; }
+
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.3s; border-radius: 28px; }
+        .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 3px; bottom: 3px; background-color: white; transition: 0.3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #667eea; }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .button { padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: background 0.3s; }
+        .button:hover { background: #5568d3; }
+        .button.secondary { background: #e5e7eb; color: #333; }
+        .button.secondary:hover { background: #d1d5db; }
+        .button.danger { background: #ef4444; }
+        .button.danger:hover { background: #dc2626; }
+
+        .form-actions { display: flex; gap: 10px; margin-top: 30px; }
+
+        .alert { padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .alert.success { background: #dcfce7; color: #15803d; border-left: 4px solid #10b981; }
+        .alert.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+
+        .api-key-section { background: #f9fafb; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+        .api-key-display { font-family: monospace; background: white; padding: 10px; border-radius: 4px; word-break: break-all; color: #666; font-size: 12px; margin: 10px 0; }
+        .copy-btn { padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .copy-btn:hover { background: #5568d3; }
+
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .settings-layout { grid-template-columns: 1fr; }
+            .settings-nav { display: flex; flex-direction: row; gap: 10px; overflow-x: auto; }
+            .settings-nav button { width: auto; flex-shrink: 0; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <span class="brand">📊 Tradosphere</span>
+        <a href="/user/dashboard">Dashboard</a>
+        <a href="/user/signals">Signals</a>
+        <a href="/user/trading">Trading</a>
+        <a href="/user/portfolio">Portfolio</a>
+        <a href="/user/market">Market</a>
+        <div class="user-menu">
+            <a href="/user/profile">Profile</a>
+            <a href="/user/subscription">Subscription</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Settings</h1>
+        </div>
+
+        <div class="settings-layout">
+            <div class="settings-nav">
+                <button class="nav-btn active" onclick="showSection('account')">Account</button>
+                <button class="nav-btn" onclick="showSection('preferences')">Preferences</button>
+                <button class="nav-btn" onclick="showSection('notifications')">Notifications</button>
+                <button class="nav-btn" onclick="showSection('api')">API Keys</button>
+                <button class="nav-btn" onclick="showSection('security')">Security</button>
+            </div>
+
+            <div class="settings-content">
+                <!-- Account Section -->
+                <div id="account" class="settings-section active">
+                    <div class="section-title">Account Settings</div>
+                    <div class="section-description">Manage your account information</div>
+
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="email" value="user@example.com" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="fullname" value="John Trader" />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="phone" value="+91 9876543210" />
+                        </div>
+                        <div class="form-group">
+                            <label>Country</label>
+                            <select id="country">
+                                <option>India</option>
+                                <option>United States</option>
+                                <option>United Kingdom</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="button" onclick="saveAccountSettings()">Save Changes</button>
+                        <button class="button secondary" onclick="resetForm('account')">Reset</button>
+                    </div>
+                </div>
+
+                <!-- Preferences Section -->
+                <div id="preferences" class="settings-section">
+                    <div class="section-title">Trading Preferences</div>
+                    <div class="section-description">Customize your trading experience</div>
+
+                    <div class="form-group">
+                        <label>Default Capital</label>
+                        <input type="number" value="100000" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Risk Tolerance</label>
+                        <select>
+                            <option>Conservative</option>
+                            <option selected>Moderate</option>
+                            <option>Aggressive</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Preferred Time Zone</label>
+                        <select>
+                            <option selected>IST (Indian Standard Time)</option>
+                            <option>EST (Eastern Standard Time)</option>
+                            <option>GMT (Greenwich Mean Time)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Default Signal Type</label>
+                        <select>
+                            <option selected>All Signals</option>
+                            <option>Technical Only</option>
+                            <option>Options Only</option>
+                            <option>High Confidence Only</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="button" onclick="savePreferences()">Save Preferences</button>
+                    </div>
+                </div>
+
+                <!-- Notifications Section -->
+                <div id="notifications" class="settings-section">
+                    <div class="section-title">Notification Settings</div>
+                    <div class="section-description">Control how you receive alerts</div>
+
+                    <div class="toggle">
+                        <label>Email Notifications</label>
+                        <label class="switch">
+                            <input type="checkbox" checked />
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle">
+                        <label>Signal Alerts</label>
+                        <label class="switch">
+                            <input type="checkbox" checked />
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle">
+                        <label>Trade Confirmation</label>
+                        <label class="switch">
+                            <input type="checkbox" checked />
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle">
+                        <label>Daily Summary</label>
+                        <label class="switch">
+                            <input type="checkbox" />
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle">
+                        <label>System Updates</label>
+                        <label class="switch">
+                            <input type="checkbox" checked />
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="button" onclick="saveNotifications()">Save Preferences</button>
+                    </div>
+                </div>
+
+                <!-- API Keys Section -->
+                <div id="api" class="settings-section">
+                    <div class="section-title">API Keys</div>
+                    <div class="section-description">Manage your API keys for third-party integrations</div>
+
+                    <div class="api-key-section">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <strong>Primary Key</strong>
+                            <button class="copy-btn" onclick="copyToClipboard('primary-key')">Copy</button>
+                        </div>
+                        <div class="api-key-display" id="primary-key">api_key_will_be_generated</div>
+                        <small style="color: #666;">Created: Jan 15, 2024</small>
+                    </div>
+
+                    <div class="api-key-section">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <strong>Secondary Key</strong>
+                            <button class="copy-btn" onclick="copyToClipboard('secondary-key')">Copy</button>
+                        </div>
+                        <div class="api-key-display" id="secondary-key">api_key_will_be_generated</div>
+                        <small style="color: #666;">Created: Feb 20, 2024</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="button" onclick="generateNewKey()">Generate New Key</button>
+                        <button class="button danger" onclick="revokeKey()">Revoke All Keys</button>
+                    </div>
+                </div>
+
+                <!-- Security Section -->
+                <div id="security" class="settings-section">
+                    <div class="section-title">Security Settings</div>
+                    <div class="section-description">Protect your account</div>
+
+                    <div class="form-group">
+                        <label>Current Password</label>
+                        <input type="password" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Confirm New Password</label>
+                        <input type="password" />
+                    </div>
+
+                    <div class="toggle">
+                        <label>Two-Factor Authentication (2FA)</label>
+                        <label class="switch">
+                            <input type="checkbox" />
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle">
+                        <label>Login Alerts</label>
+                        <label class="switch">
+                            <input type="checkbox" checked />
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="button" onclick="changePassword()">Update Password</button>
+                        <button class="button danger" onclick="deleteAccount()">Delete Account</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const TOKEN = localStorage.getItem('jwt_token');
+
+        if (!TOKEN) {
+            window.location.href = '/login';
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.settings-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function saveAccountSettings() {
+            alert('Account settings saved successfully!');
+        }
+
+        function savePreferences() {
+            alert('Preferences saved successfully!');
+        }
+
+        function saveNotifications() {
+            alert('Notification preferences saved!');
+        }
+
+        function resetForm(section) {
+            alert('Form reset.');
+        }
+
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('API key copied to clipboard');
+            });
+        }
+
+        function generateNewKey() {
+            alert('New API key generated. Make sure to copy it as you won\'t see it again.');
+        }
+
+        function revokeKey() {
+            if (confirm('Are you sure? All API integrations will stop working.')) {
+                alert('All API keys revoked.');
+            }
+        }
+
+        function changePassword() {
+            alert('Password updated successfully!');
+        }
+
+        function deleteAccount() {
+            if (confirm('Are you sure? This action cannot be undone. All your data will be permanently deleted.')) {
+                alert('Account deletion initiated. We\'ll send you a confirmation email.');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('jwt_token');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

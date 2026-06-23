@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradosphere Admin - Users</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        .navbar { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .navbar .brand { font-size: 24px; font-weight: bold; margin-right: 40px; }
+        .navbar a { color: white; text-decoration: none; margin: 0 15px; transition: opacity 0.3s; }
+        .navbar a:hover { opacity: 0.8; }
+        .navbar .user-menu { float: right; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 30px; }
+        .header { margin-bottom: 30px; }
+        .header h1 { font-size: 32px; color: #1f2937; margin-bottom: 10px; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-box { flex: 1; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; }
+        .button { padding: 10px 20px; background: #1f2937; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .button:hover { background: #111827; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        th { background: #f9fafb; padding: 15px; text-align: left; font-weight: 600; color: #666; font-size: 12px; }
+        td { padding: 15px; border-bottom: 1px solid #e5e7eb; }
+        tr:hover { background: #f9fafb; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .status-active { background: #dcfce7; color: #15803d; }
+        .status-inactive { background: #fee2e2; color: #991b1b; }
+        .action-btn { padding: 6px 12px; background: #1f2937; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 0 2px; }
+        .action-btn:hover { background: #111827; }
+        .action-btn.danger { background: #ef4444; }
+        .action-btn.danger:hover { background: #dc2626; }
+        .pagination { display: flex; gap: 5px; justify-content: center; margin-top: 20px; }
+        .pagination button { padding: 8px 12px; background: white; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; }
+        .pagination button.active { background: #1f2937; color: white; border-color: #1f2937; }
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .controls { flex-direction: column; }
+            table { font-size: 12px; }
+            td, th { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <span class="brand">⚙️ Tradosphere Admin</span>
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/subscriptions">Subscriptions</a>
+        <a href="/admin/analytics">Analytics</a>
+        <a href="/admin/signals">Signals</a>
+        <a href="/admin/health">Health</a>
+        <div class="user-menu">
+            <a href="/admin/settings">Settings</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>User Management</h1>
+            <p style="color: #666;">View, manage, and moderate user accounts</p>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="search-box" class="search-box" placeholder="Search by email or name..." onkeyup="filterTable()" />
+            <button class="button" onclick="exportUsers()">Export CSV</button>
+            <button class="button" onclick="refreshUsers()">Refresh</button>
+        </div>
+
+        <table id="users-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Subscription</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="users-body">
+                <tr>
+                    <td colspan="8" style="text-align: center; color: #666;">Loading users...</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <button onclick="previousPage()">← Previous</button>
+            <span id="page-info" style="padding: 8px 12px;">Page 1</span>
+            <button onclick="nextPage()">Next →</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const TOKEN = localStorage.getItem('jwt_token');
+        let currentPage = 1;
+        let allUsers = [];
+
+        if (!TOKEN || localStorage.getItem('user_role') !== 'admin') {
+            window.location.href = '/login';
+        }
+
+        window.addEventListener('load', () => {
+            loadUsers();
+        });
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/users?page=${currentPage}`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    allUsers = data.data;
+                    displayUsers(allUsers);
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        function displayUsers(users) {
+            const tbody = document.getElementById('users-body');
+            tbody.innerHTML = '';
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #666;">No users found</td></tr>';
+                return;
+            }
+
+            users.forEach(user => {
+                const statusClass = user.is_active ? 'status-active' : 'status-inactive';
+                const statusText = user.is_active ? 'Active' : 'Inactive';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.email}</td>
+                    <td>${user.name}</td>
+                    <td>${user.subscription || 'Free'}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>${new Date(user.created_at).toLocaleDateString('en-IN')}</td>
+                    <td>${user.last_login ? new Date(user.last_login).toLocaleDateString('en-IN') : 'Never'}</td>
+                    <td>
+                        <button class="action-btn" onclick="viewUser('${user.id}')">View</button>
+                        <button class="action-btn" onclick="editUser('${user.id}')">Edit</button>
+                        <button class="action-btn ${user.is_active ? 'danger' : ''}" onclick="toggleUser('${user.id}', ${!user.is_active})">${user.is_active ? 'Disable' : 'Enable'}</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterTable() {
+            const searchBox = document.getElementById('search-box').value.toLowerCase();
+            const filtered = allUsers.filter(user =>
+                user.email.toLowerCase().includes(searchBox) ||
+                user.name.toLowerCase().includes(searchBox)
+            );
+            displayUsers(filtered);
+        }
+
+        function viewUser(userId) {
+            alert(`Viewing user ${userId}`);
+            window.location.href = `/admin/user/${userId}`;
+        }
+
+        function editUser(userId) {
+            alert(`Editing user ${userId}`);
+        }
+
+        function toggleUser(userId, shouldActivate) {
+            alert(`${shouldActivate ? 'Enabling' : 'Disabling'} user ${userId}...`);
+            loadUsers();
+        }
+
+        function exportUsers() {
+            alert('Exporting users as CSV...');
+        }
+
+        function refreshUsers() {
+            loadUsers();
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadUsers();
+            }
+        }
+
+        function nextPage() {
+            currentPage++;
+            loadUsers();
+        }
+
+        function logout() {
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('user_role');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

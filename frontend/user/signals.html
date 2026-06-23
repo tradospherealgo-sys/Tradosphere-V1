@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trading Signals - Tradosphere</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <style>
+        .signal-card { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #667eea; }
+        .signal-bullish { border-left-color: #10b981; }
+        .signal-bearish { border-left-color: #ef4444; }
+        .signal-direction { font-weight: bold; color: #667eea; }
+    </style>
+</head>
+<body>
+    <h1>Trading Signals</h1>
+    <button onclick="generateSignals()" class="button">Generate New Signals</button>
+    <div id="signals-container"></div>
+    <script src="../assets/js/api.js"></script>
+    <script>
+        async function generateSignals() {
+            const res = await fetch('/api/signals/generate', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbol: 'NIFTY' })
+            });
+            const data = await res.json();
+            alert(data.status === 'success' ? 'Signal generated!' : 'Error: ' + data.message);
+            loadSignals();
+        }
+        
+        async function loadSignals() {
+            const res = await fetch('/api/signals', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` }
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                document.getElementById('signals-container').innerHTML = data.data.map(s => `
+                    <div class="signal-card ${s.verdict === 'BUY' ? 'signal-bullish' : 'signal-bearish'}">
+                        <strong>${s.symbol}</strong> - <span class="signal-direction">${s.verdict}</span>
+                        Entry: ₹${s.entry} | Target: ₹${s.target} | SL: ₹${s.sl}
+                    </div>
+                `).join('');
+            }
+        }
+        loadSignals();
+    </script>
+</body>
+</html>

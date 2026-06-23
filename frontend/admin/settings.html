@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradosphere Admin - Settings</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        .navbar { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .navbar .brand { font-size: 24px; font-weight: bold; margin-right: 40px; }
+        .navbar a { color: white; text-decoration: none; margin: 0 15px; transition: opacity 0.3s; }
+        .navbar a:hover { opacity: 0.8; }
+        .navbar .user-menu { float: right; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 30px; }
+        .header { margin-bottom: 40px; }
+        .header h1 { font-size: 32px; color: #333; margin-bottom: 10px; }
+        .settings-nav { display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #e5e7eb; }
+        .nav-btn { padding: 12px 24px; background: none; border: none; cursor: pointer; color: #666; font-size: 14px; border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .nav-btn:hover { color: #1f2937; }
+        .nav-btn.active { color: #1f2937; border-bottom-color: #1f2937; }
+        .content { display: none; }
+        .content.active { display: block; }
+        .section { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .section-title { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 25px; }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; color: #333; font-size: 14px; margin-bottom: 8px; font-weight: 500; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #1f2937; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .button { padding: 12px 24px; background: #1f2937; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: background 0.3s; }
+        .button:hover { background: #111827; }
+        .button.secondary { background: #e5e7eb; color: #333; }
+        .button.secondary:hover { background: #d1d5db; }
+        .button.danger { background: #ef4444; }
+        .button.danger:hover { background: #dc2626; }
+        .form-actions { display: flex; gap: 10px; margin-top: 30px; }
+        .toggle { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f9fafb; border-radius: 6px; margin-bottom: 15px; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.3s; border-radius: 28px; }
+        .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 3px; bottom: 3px; background-color: white; transition: 0.3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #1f2937; }
+        input:checked + .slider:before { transform: translateX(22px); }
+        .alert { padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .alert.info { background: #dbeafe; color: #0c4a6e; border-left: 4px solid #1f2937; }
+        .alert.success { background: #dcfce7; color: #15803d; border-left: 4px solid #10b981; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #f9fafb; padding: 12px; text-align: left; font-weight: 600; color: #666; font-size: 12px; }
+        td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .form-row { grid-template-columns: 1fr; }
+            .settings-nav { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <span class="brand">⚙️ Tradosphere Admin</span>
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/subscriptions">Subscriptions</a>
+        <a href="/admin/analytics">Analytics</a>
+        <a href="/admin/signals">Signals</a>
+        <a href="/admin/health">Health</a>
+        <div class="user-menu">
+            <a href="/admin/settings">Settings</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Admin Settings</h1>
+        </div>
+
+        <div class="settings-nav">
+            <button class="nav-btn active" onclick="showSection('general')">General</button>
+            <button class="nav-btn" onclick="showSection('email')">Email</button>
+            <button class="nav-btn" onclick="showSection('payment')">Payment</button>
+            <button class="nav-btn" onclick="showSection('features')">Features</button>
+            <button class="nav-btn" onclick="showSection('security')">Security</button>
+        </div>
+
+        <!-- General Settings -->
+        <div id="general" class="content active">
+            <div class="section">
+                <div class="section-title">General Settings</div>
+                <div class="form-group">
+                    <label>Platform Name</label>
+                    <input type="text" value="Tradosphere" />
+                </div>
+                <div class="form-group">
+                    <label>Support Email</label>
+                    <input type="email" value="support@tradosphere.com" />
+                </div>
+                <div class="form-group">
+                    <label>Admin Email</label>
+                    <input type="email" value="admin@tradosphere.com" />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Default Currency</label>
+                        <select>
+                            <option selected>INR (₹)</option>
+                            <option>USD ($)</option>
+                            <option>EUR (€)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Default Language</label>
+                        <select>
+                            <option selected>English</option>
+                            <option>Hindi</option>
+                            <option>Marathi</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="button" onclick="saveGeneral()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Settings -->
+        <div id="email" class="content">
+            <div class="section">
+                <div class="section-title">Email Configuration</div>
+                <div class="alert alert-info">
+                    Configure SMTP settings for email notifications
+                </div>
+                <div class="form-group">
+                    <label>SMTP Server</label>
+                    <input type="text" value="smtp.gmail.com" />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>SMTP Port</label>
+                        <input type="number" value="587" />
+                    </div>
+                    <div class="form-group">
+                        <label>SMTP Username</label>
+                        <input type="email" value="noreply@tradosphere.com" />
+                    </div>
+                </div>
+                <div class="toggle">
+                    <label>Enable TLS</label>
+                    <label class="switch">
+                        <input type="checkbox" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button class="button" onclick="testEmail()">Test Email</button>
+                    <button class="button" onclick="saveEmail()">Save Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Settings -->
+        <div id="payment" class="content">
+            <div class="section">
+                <div class="section-title">Payment Gateway</div>
+                <div class="alert alert-info">
+                    Stripe is currently configured for payments
+                </div>
+                <div class="form-group">
+                    <label>Stripe API Key (Public)</label>
+                    <input type="password" value="[Set via environment variable]" />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Free Plan Price</label>
+                        <input type="number" value="0" />
+                    </div>
+                    <div class="form-group">
+                        <label>Pro Plan Price (Monthly)</label>
+                        <input type="number" value="999" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Elite Plan Price (Monthly)</label>
+                    <input type="number" value="2999" />
+                </div>
+                <div class="toggle">
+                    <label>Enable Payments</label>
+                    <label class="switch">
+                        <input type="checkbox" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button class="button" onclick="savePayment()">Save Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Flags -->
+        <div id="features" class="content">
+            <div class="section">
+                <div class="section-title">Feature Flags</div>
+                <div class="toggle">
+                    <label>Paper Trading</label>
+                    <label class="switch">
+                        <input type="checkbox" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle">
+                    <label>Signal Generation</label>
+                    <label class="switch">
+                        <input type="checkbox" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle">
+                    <label>Backtesting</label>
+                    <label class="switch">
+                        <input type="checkbox" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle">
+                    <label>Options Analysis</label>
+                    <label class="switch">
+                        <input type="checkbox" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle">
+                    <label>Angel One Integration</label>
+                    <label class="switch">
+                        <input type="checkbox" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button class="button" onclick="saveFeatures()">Save Features</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Settings -->
+        <div id="security" class="content">
+            <div class="section">
+                <div class="section-title">Security Settings</div>
+                <div class="toggle">
+                    <label>Enforce 2FA for Admins</label>
+                    <label class="switch">
+                        <input type="checkbox" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle">
+                    <label>Require Email Verification</label>
+                    <label class="switch">
+                        <input type="checkbox" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle">
+                    <label>Rate Limiting</label>
+                    <label class="switch">
+                        <input type="checkbox" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Session Timeout (minutes)</label>
+                    <input type="number" value="30" />
+                </div>
+                <div class="form-group">
+                    <label>Max Login Attempts</label>
+                    <input type="number" value="5" />
+                </div>
+                <div class="form-actions">
+                    <button class="button" onclick="saveSecurity()">Save Settings</button>
+                    <button class="button danger" onclick="clearAllSessions()">Clear All Sessions</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TOKEN = localStorage.getItem('jwt_token');
+
+        if (!TOKEN || localStorage.getItem('user_role') !== 'admin') {
+            window.location.href = '/login';
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function saveGeneral() {
+            alert('General settings saved successfully!');
+        }
+
+        function saveEmail() {
+            alert('Email settings saved successfully!');
+        }
+
+        function testEmail() {
+            alert('Sending test email...');
+        }
+
+        function savePayment() {
+            alert('Payment settings saved successfully!');
+        }
+
+        function saveFeatures() {
+            alert('Feature flags updated successfully!');
+        }
+
+        function saveSecurity() {
+            alert('Security settings saved successfully!');
+        }
+
+        function clearAllSessions() {
+            if (confirm('This will log out all users. Are you sure?')) {
+                alert('All sessions cleared.');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('user_role');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Paper Trading - Tradosphere</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body>
+    <h1>Paper Trading</h1>
+    <div style="background: white; padding: 20px; border-radius: 8px;">
+        <h2>Create Trade</h2>
+        <input type="text" id="symbol" placeholder="Symbol (NIFTY)" value="NIFTY">
+        <select id="direction">
+            <option>BUY_CALL</option>
+            <option>BUY_PUT</option>
+            <option>SELL_CALL</option>
+            <option>SELL_PUT</option>
+        </select>
+        <input type="number" id="entry" placeholder="Entry Price">
+        <input type="number" id="target" placeholder="Target Price">
+        <input type="number" id="stoploss" placeholder="Stop Loss">
+        <button onclick="createTrade()" class="button">Create Trade</button>
+    </div>
+    <div id="trades-container" style="margin-top: 30px;"></div>
+    <script src="../assets/js/api.js"></script>
+    <script>
+        async function createTrade() {
+            const res = await fetch('/api/trading/create-trade', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    symbol: document.getElementById('symbol').value,
+                    direction: document.getElementById('direction').value,
+                    entry_price: document.getElementById('entry').value,
+                    target_price: document.getElementById('target').value,
+                    stop_loss: document.getElementById('stoploss').value
+                })
+            });
+            const data = await res.json();
+            alert(data.status === 'success' ? 'Trade created!' : 'Error: ' + data.message);
+            loadTrades();
+        }
+        
+        async function loadTrades() {
+            const res = await fetch('/api/trading/open-trades', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` }
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                document.getElementById('trades-container').innerHTML = '<h2>Open Trades</h2>' + (data.trades.length ? data.trades.map(t => `<div style="background: white; padding: 15px; margin: 10px 0; border-radius: 8px;"><strong>${t.symbol}</strong> ${t.direction} - Entry: ₹${t.entry_price}</div>`).join('') : '<p>No open trades</p>');
+            }
+        }
+        loadTrades();
+    </script>
+</body>
+</html>

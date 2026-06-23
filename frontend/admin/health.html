@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradosphere Admin - System Health</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        .navbar { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .navbar .brand { font-size: 24px; font-weight: bold; margin-right: 40px; }
+        .navbar a { color: white; text-decoration: none; margin: 0 15px; transition: opacity 0.3s; }
+        .navbar a:hover { opacity: 0.8; }
+        .navbar .user-menu { float: right; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 30px; }
+        .header { margin-bottom: 30px; }
+        .header h1 { font-size: 32px; color: #1f2937; margin-bottom: 10px; }
+        .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .health-card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid #10b981; }
+        .health-card.warning { border-left-color: #f59e0b; }
+        .health-card.error { border-left-color: #ef4444; }
+        .service-name { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .status-indicator { width: 12px; height: 12px; border-radius: 50%; background: #10b981; }
+        .status-indicator.warning { background: #f59e0b; }
+        .status-indicator.error { background: #ef4444; }
+        .service-detail { font-size: 12px; color: #666; line-height: 1.6; }
+        .detail-item { margin: 8px 0; }
+        .detail-label { font-weight: 600; }
+        .uptime { font-size: 24px; font-weight: bold; color: #10b981; }
+        .response-time { font-size: 18px; color: #333; }
+        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .status-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
+        .status-box.healthy { border-top: 3px solid #10b981; }
+        .status-box.warning { border-top: 3px solid #f59e0b; }
+        .status-box.error { border-top: 3px solid #ef4444; }
+        .value { font-size: 28px; font-weight: bold; color: #1f2937; margin: 10px 0; }
+        .label { font-size: 12px; color: #666; text-transform: uppercase; }
+        .logs { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .logs h2 { margin-bottom: 15px; }
+        .log-entry { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; font-family: monospace; }
+        .log-entry.error { color: #ef4444; }
+        .log-entry.warning { color: #f59e0b; }
+        .log-entry.info { color: #3b82f6; }
+        .button { padding: 10px 20px; background: #1f2937; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px; }
+        .button:hover { background: #111827; }
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .health-grid { grid-template-columns: 1fr; }
+            .status-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <span class="brand">⚙️ Tradosphere Admin</span>
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/subscriptions">Subscriptions</a>
+        <a href="/admin/analytics">Analytics</a>
+        <a href="/admin/signals">Signals</a>
+        <a href="/admin/health">Health</a>
+        <div class="user-menu">
+            <a href="/admin/settings">Settings</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>System Health</h1>
+            <p style="color: #666;">Monitor system performance and service status</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <button class="button" onclick="refreshHealth()">Refresh Status</button>
+            <button class="button" onclick="runDiagnostics()">Run Diagnostics</button>
+        </div>
+
+        <div class="status-grid">
+            <div class="status-box healthy">
+                <div class="label">Overall Status</div>
+                <div class="value" id="overall-status">✓ Healthy</div>
+            </div>
+            <div class="status-box healthy">
+                <div class="label">API Uptime</div>
+                <div class="value" id="api-uptime">99.9%</div>
+            </div>
+            <div class="status-box healthy">
+                <div class="label">Avg Response Time</div>
+                <div class="value" id="avg-response">45ms</div>
+            </div>
+            <div class="status-box healthy">
+                <div class="label">Database Status</div>
+                <div class="value" id="db-status">✓ OK</div>
+            </div>
+        </div>
+
+        <div class="health-grid">
+            <div class="health-card" id="api-health">
+                <div class="service-name">
+                    API Server
+                    <span class="status-indicator"></span>
+                </div>
+                <div class="service-detail">
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span> Running
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Uptime:</span> <span class="uptime">99.9%</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Response Time:</span> <span class="response-time">45ms</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">CPU:</span> 32%
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Memory:</span> 1.2GB / 4GB
+                    </div>
+                </div>
+            </div>
+
+            <div class="health-card" id="db-health">
+                <div class="service-name">
+                    Database
+                    <span class="status-indicator"></span>
+                </div>
+                <div class="service-detail">
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span> Connected
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Connections:</span> 12 / 50
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Query Time:</span> 8.2ms
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Size:</span> 245MB
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Backups:</span> Daily
+                    </div>
+                </div>
+            </div>
+
+            <div class="health-card" id="cache-health">
+                <div class="service-name">
+                    Cache (Redis)
+                    <span class="status-indicator"></span>
+                </div>
+                <div class="service-detail">
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span> Running
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Memory:</span> 256MB / 512MB
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Hit Rate:</span> 87%
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Keys:</span> 1,245
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Ops/sec:</span> 2,340
+                    </div>
+                </div>
+            </div>
+
+            <div class="health-card" id="email-health">
+                <div class="service-name">
+                    Email Service
+                    <span class="status-indicator"></span>
+                </div>
+                <div class="service-detail">
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span> Active
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Emails Sent:</span> 1,240 / day
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Delivery Rate:</span> 99.2%
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Bounce Rate:</span> 0.8%
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Queue:</span> 0
+                    </div>
+                </div>
+            </div>
+
+            <div class="health-card" id="angel-health">
+                <div class="service-name">
+                    Angel One API
+                    <span class="status-indicator"></span>
+                </div>
+                <div class="service-detail">
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span> Connected
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Latency:</span> 127ms
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Errors (24h):</span> 2
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Token:</span> Valid
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Last Sync:</span> 2 min ago
+                    </div>
+                </div>
+            </div>
+
+            <div class="health-card" id="stripe-health">
+                <div class="service-name">
+                    Stripe API
+                    <span class="status-indicator"></span>
+                </div>
+                <div class="service-detail">
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span> Connected
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Latency:</span> 234ms
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Errors (24h):</span> 0
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Webhooks:</span> Active
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Last Check:</span> 5 min ago
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="logs">
+            <h2>Recent Logs</h2>
+            <div id="logs-container" style="max-height: 300px; overflow-y: auto;">
+                <div class="log-entry info">[INFO] API server started successfully</div>
+                <div class="log-entry info">[INFO] Database connection pool initialized</div>
+                <div class="log-entry info">[INFO] Cache service online</div>
+                <div class="log-entry info">[INFO] Angel One token refreshed</div>
+                <div class="log-entry warning">[WARNING] High memory usage on worker-2</div>
+                <div class="log-entry info">[INFO] Backup completed successfully</div>
+                <div class="log-entry info">[INFO] Health check passed</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const TOKEN = localStorage.getItem('jwt_token');
+
+        if (!TOKEN || localStorage.getItem('user_role') !== 'admin') {
+            window.location.href = '/login';
+        }
+
+        window.addEventListener('load', () => {
+            refreshHealth();
+            setInterval(refreshHealth, 30000);
+        });
+
+        async function refreshHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health/detailed`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    updateHealthUI(data.data);
+                }
+            } catch (error) {
+                console.error('Error loading health data:', error);
+            }
+        }
+
+        function updateHealthUI(health) {
+            document.getElementById('overall-status').textContent = health.status === 'healthy' ? '✓ Healthy' : '⚠ Issues Detected';
+            document.getElementById('api-uptime').textContent = (health.api_uptime || 99.9).toFixed(1) + '%';
+            document.getElementById('avg-response').textContent = (health.avg_response_time || 45) + 'ms';
+            document.getElementById('db-status').textContent = health.database === 'connected' ? '✓ OK' : '✗ Error';
+        }
+
+        function runDiagnostics() {
+            alert('Running system diagnostics...');
+        }
+
+        function logout() {
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('user_role');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

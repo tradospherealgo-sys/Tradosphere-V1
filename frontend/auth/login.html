@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradosphere - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 100%; max-width: 400px; }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { font-size: 28px; color: #667eea; margin-bottom: 10px; }
+        .logo p { color: #666; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; color: #333; font-size: 14px; margin-bottom: 8px; font-weight: 500; }
+        input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        input:focus { outline: none; border-color: #667eea; }
+        .button { width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.3s; }
+        .button:hover { background: #5568d3; }
+        .divider { text-align: center; margin: 20px 0; color: #666; font-size: 12px; }
+        .divider::before, .divider::after { content: ''; display: inline-block; width: 45%; height: 1px; background: #d1d5db; margin: 0 10px; vertical-align: middle; }
+        .google-button { width: 100%; padding: 12px; background: white; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; color: #333; transition: background 0.3s; margin-top: 15px; }
+        .google-button:hover { background: #f9fafb; }
+        .signup-link { text-align: center; color: #666; font-size: 14px; margin-top: 20px; }
+        .signup-link a { color: #667eea; text-decoration: none; }
+        .alert { padding: 15px; border-radius: 6px; margin-bottom: 20px; display: none; }
+        .alert.show { display: block; }
+        .alert.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>📊 Tradosphere</h1>
+            <p>Paper Trading Platform</p>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" placeholder="your@email.com">
+        </div>
+
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="••••••••">
+        </div>
+
+        <button class="button" onclick="login()">Sign In</button>
+
+        <div class="divider">OR</div>
+
+        <button class="google-button" onclick="googleLogin()">🔒 Sign in with Google</button>
+
+        <div class="signup-link">
+            Don't have an account? <a href="/signup">Sign up</a>
+        </div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        window.addEventListener('load', () => {
+            google.accounts.id.initialize({
+                client_id: 'YOUR_GOOGLE_CLIENT_ID',
+                callback: handleCredentialResponse
+            });
+            google.accounts.id.renderButton(
+                document.querySelector('.google-button'),
+                { theme: 'outline', size: 'large' }
+            );
+        });
+
+        async function handleCredentialResponse(response) {
+            try {
+                const res = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credential: response.credential })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    localStorage.setItem('jwt_token', data.access_token);
+                    localStorage.setItem('user_role', data.user_role);
+                    window.location.href = data.user_role === 'admin' ? '/admin/dashboard' : '/user/dashboard';
+                } else {
+                    showError(data.message);
+                }
+            } catch (error) {
+                showError('Login failed: ' + error.message);
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    localStorage.setItem('jwt_token', data.access_token);
+                    localStorage.setItem('user_role', data.user_role);
+                    window.location.href = data.user_role === 'admin' ? '/admin/dashboard' : '/user/dashboard';
+                } else {
+                    showError(data.message);
+                }
+            } catch (error) {
+                showError('Login failed: ' + error.message);
+            }
+        }
+
+        function googleLogin() {
+            document.querySelector('.google-button').click();
+        }
+
+        function showError(message) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.classList.add('show', 'error');
+            setTimeout(() => alert.classList.remove('show'), 5000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Portfolio - Tradosphere</title>
+    <link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body>
+    <h1>Portfolio</h1>
+    <div id="portfolio-container"></div>
+    <script src="../assets/js/api.js"></script>
+    <script>
+        async function loadPortfolio() {
+            const res = await fetch('/api/user/dashboard-overview', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` }
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                const p = data.data;
+                document.getElementById('portfolio-container').innerHTML = `
+                    <div style="background: white; padding: 20px; border-radius: 8px;">
+                        <h2>Portfolio Summary</h2>
+                        <p><strong>Total Capital:</strong> ₹${p.account.total_capital}</p>
+                        <p><strong>Total P&L:</strong> ₹${p.account.total_pnl}</p>
+                        <p><strong>Open Trades:</strong> ${p.trades.open_trades}</p>
+                        <p><strong>Win Rate:</strong> ${p.performance.win_rate}%</p>
+                    </div>
+                `;
+            }
+        }
+        loadPortfolio();
+    </script>
+</body>
+</html>

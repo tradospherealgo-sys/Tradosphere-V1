@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradosphere Admin - Analytics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        .navbar { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .navbar .brand { font-size: 24px; font-weight: bold; margin-right: 40px; }
+        .navbar a { color: white; text-decoration: none; margin: 0 15px; transition: opacity 0.3s; }
+        .navbar a:hover { opacity: 0.8; }
+        .navbar .user-menu { float: right; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 30px; }
+        .header { margin-bottom: 30px; }
+        .header h1 { font-size: 32px; color: #1f2937; margin-bottom: 10px; }
+        .date-range { display: flex; gap: 10px; margin-bottom: 30px; }
+        .date-range input { padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; }
+        .date-range button { padding: 10px 20px; background: #1f2937; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .stat-label { color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 10px; }
+        .stat-value { font-size: 32px; font-weight: bold; color: #1f2937; }
+        .stat-change { font-size: 12px; color: #666; margin-top: 10px; }
+        .positive { color: #10b981; }
+        .negative { color: #ef4444; }
+        .chart { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); height: 400px; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; color: #666; }
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .date-range { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <span class="brand">⚙️ Tradosphere Admin</span>
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/subscriptions">Subscriptions</a>
+        <a href="/admin/analytics">Analytics</a>
+        <a href="/admin/signals">Signals</a>
+        <a href="/admin/health">Health</a>
+        <div class="user-menu">
+            <a href="/admin/settings">Settings</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Platform Analytics</h1>
+            <p style="color: #666;">Comprehensive platform metrics and insights</p>
+        </div>
+
+        <div class="date-range">
+            <input type="date" id="start-date" />
+            <input type="date" id="end-date" />
+            <button onclick="updateAnalytics()">Update</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" id="total-users">0</div>
+                <div class="stat-change positive">+15% this month</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Users (7d)</div>
+                <div class="stat-value" id="active-users">0</div>
+                <div class="stat-change">This week</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Trades</div>
+                <div class="stat-value" id="total-trades">0</div>
+                <div class="stat-change positive">+22 today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Signals</div>
+                <div class="stat-value" id="total-signals">0</div>
+                <div class="stat-change">Generated</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Platform Revenue</div>
+                <div class="stat-value" id="platform-revenue">₹0</div>
+                <div class="stat-change positive">+8% vs last month</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">API Requests</div>
+                <div class="stat-value" id="api-requests">0</div>
+                <div class="stat-change">Last 24h</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart" id="user-growth-chart">
+                📊 User Growth Chart (placeholder)
+            </div>
+            <div class="chart" id="revenue-chart">
+                💰 Revenue Chart (placeholder)
+            </div>
+            <div class="chart" id="trades-chart">
+                📈 Trades Volume Chart (placeholder)
+            </div>
+            <div class="chart" id="signals-chart">
+                🎯 Signals Performance Chart (placeholder)
+            </div>
+        </div>
+
+        <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <h2 style="margin-bottom: 20px;">Top Performing Symbols</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f9fafb;">
+                        <th style="padding: 12px; text-align: left;">Symbol</th>
+                        <th style="padding: 12px; text-align: left;">Trades</th>
+                        <th style="padding: 12px; text-align: left;">Win Rate</th>
+                        <th style="padding: 12px; text-align: left;">Avg P&L</th>
+                    </tr>
+                </thead>
+                <tbody id="top-symbols">
+                    <tr>
+                        <td colspan="4" style="padding: 20px; text-align: center; color: #666;">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const TOKEN = localStorage.getItem('jwt_token');
+
+        if (!TOKEN || localStorage.getItem('user_role') !== 'admin') {
+            window.location.href = '/login';
+        }
+
+        window.addEventListener('load', () => {
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+            document.getElementById('start-date').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('end-date').value = today.toISOString().split('T')[0];
+
+            updateAnalytics();
+        });
+
+        async function updateAnalytics() {
+            try {
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+
+                const response = await fetch(`${API_BASE}/admin/analytics?start=${startDate}&end=${endDate}`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    const analytics = data.data;
+
+                    document.getElementById('total-users').textContent = analytics.total_users || '0';
+                    document.getElementById('active-users').textContent = analytics.active_users_7d || '0';
+                    document.getElementById('total-trades').textContent = analytics.total_trades || '0';
+                    document.getElementById('total-signals').textContent = analytics.total_signals || '0';
+                    document.getElementById('platform-revenue').textContent = `₹${(analytics.platform_revenue || 0).toLocaleString('en-IN')}`;
+                    document.getElementById('api-requests').textContent = analytics.api_requests_24h || '0';
+
+                    if (analytics.top_symbols) {
+                        displayTopSymbols(analytics.top_symbols);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        function displayTopSymbols(symbols) {
+            const tbody = document.getElementById('top-symbols');
+            tbody.innerHTML = '';
+
+            symbols.forEach(symbol => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #e5e7eb';
+                tr.innerHTML = `
+                    <td style="padding: 12px;">${symbol.name}</td>
+                    <td style="padding: 12px;">${symbol.trades}</td>
+                    <td style="padding: 12px;">${symbol.win_rate.toFixed(1)}%</td>
+                    <td style="padding: 12px; color: ${symbol.avg_pnl >= 0 ? '#10b981' : '#ef4444'};">₹${symbol.avg_pnl.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('user_role');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>
