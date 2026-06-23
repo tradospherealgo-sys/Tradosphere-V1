@@ -102,9 +102,11 @@
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    localStorage.setItem('jwt_token', data.access_token);
-                    localStorage.setItem('user_role', data.user_role);
-                    window.location.href = data.user_role === 'admin' ? '/admin/dashboard' : '/user/dashboard';
+                    const token = data.data?.tokens?.access_token || data.access_token;
+                    const role = data.user_role || 'user';
+                    localStorage.setItem('jwt_token', token);
+                    localStorage.setItem('user_role', role);
+                    window.location.href = role === 'admin' ? '/admin/dashboard' : '/user/dashboard';
                 } else {
                     showError(data.message);
                 }

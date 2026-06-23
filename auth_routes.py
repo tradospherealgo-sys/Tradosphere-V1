@@ -143,7 +143,8 @@ def google_auth():
                 "access_token": access_token,
                 "email": user.email,
                 "name": user.name,
-                "user_id": user.id
+                "user_id": user.id,
+                "user_role": "admin" if user.is_admin else "user"
             }), 200
 
         finally:
@@ -343,6 +344,7 @@ def login():
         return jsonify({
             "status": "success",
             "message": "Login successful",
+            "user_role": "admin" if user.is_admin else "user",
             "data": {
                 "user": user_dict,
                 "tokens": tokens
