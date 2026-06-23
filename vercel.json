@@ -1,13 +1,6 @@
 {
-  "version": 3,
+  "version": 2,
   "name": "tradosphere-frontend",
-  "env": {
-    "NEXT_PUBLIC_API_URL": {
-      "description": "Backend API URL",
-      "required": true,
-      "example": "https://tradosphere-backend.railway.app"
-    }
-  },
   "buildCommand": "echo 'Frontend static files ready'",
   "outputDirectory": ".",
   "routes": [
@@ -42,7 +35,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "dashboard_live.html",
+      "dest": "/dashboard_live.html",
       "headers": {
         "Cache-Control": "no-cache, no-store, must-revalidate",
         "X-Content-Type-Options": "nosniff"
