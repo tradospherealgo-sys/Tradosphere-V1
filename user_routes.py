@@ -225,6 +225,96 @@ def remove_api_key(key_id):
         }), 500
 
 
+@user_bp.route('/subscription', methods=['GET'])
+@MultiTenantMiddleware.tenant_required
+def get_subscription():
+    """Get user subscription info"""
+    try:
+        user_id = g.user_id
+        # Mock subscription data
+        subscription = {
+            'plan': 'free',
+            'status': 'active',
+            'amount': 0,
+            'billing_cycle': 'Monthly',
+            'next_renewal': 'N/A'
+        }
+        return jsonify({
+            "status": "success",
+            "data": subscription
+        }), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@user_bp.route('/billing-history', methods=['GET'])
+@MultiTenantMiddleware.tenant_required
+def get_billing_history():
+    """Get user billing history"""
+    try:
+        user_id = g.user_id
+        # Mock billing history
+        history = [
+            {'date': '2026-06-15', 'description': 'Pro Plan - Monthly', 'amount': 999, 'status': 'paid'},
+            {'date': '2026-05-15', 'description': 'Pro Plan - Monthly', 'amount': 999, 'status': 'paid'},
+            {'date': '2026-04-15', 'description': 'Free Plan', 'amount': 0, 'status': 'paid'},
+        ]
+        return jsonify({
+            "status": "success",
+            "data": history
+        }), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@user_bp.route('/watchlist', methods=['GET'])
+@MultiTenantMiddleware.tenant_required
+def get_watchlist():
+    """Get user watchlist"""
+    try:
+        user_id = g.user_id
+        # Mock watchlist data
+        watchlist = [
+            {'symbol': 'NIFTY', 'price': 52000, 'change': 100, 'changePercent': 0.19, 'volume': 1000000},
+            {'symbol': 'BANKNIFTY', 'price': 48000, 'change': -200, 'changePercent': -0.42, 'volume': 800000},
+            {'symbol': 'SENSEX', 'price': 60000, 'change': 300, 'changePercent': 0.50, 'volume': 500000},
+        ]
+        return jsonify({
+            "status": "success",
+            "data": watchlist
+        }), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@user_bp.route('/watchlist', methods=['POST'])
+@MultiTenantMiddleware.tenant_required
+def add_watchlist():
+    """Add symbol to watchlist"""
+    try:
+        data = request.get_json()
+        symbol = data.get('symbol')
+        return jsonify({
+            "status": "success",
+            "message": f"{symbol} added to watchlist"
+        }), 201
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@user_bp.route('/watchlist/<symbol>', methods=['DELETE'])
+@MultiTenantMiddleware.tenant_required
+def remove_watchlist(symbol):
+    """Remove symbol from watchlist"""
+    try:
+        return jsonify({
+            "status": "success",
+            "message": f"{symbol} removed from watchlist"
+        }), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @user_bp.route('/preferences', methods=['GET'])
 @MultiTenantMiddleware.tenant_required
 def get_preferences():

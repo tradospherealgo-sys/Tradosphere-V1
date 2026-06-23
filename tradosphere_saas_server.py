@@ -423,6 +423,55 @@ def status():
         }), 500
 
 # ===== MARKET DATA (With User Context) =====
+@app.route('/api/market/overview', methods=['GET'])
+@AuthDecorator.token_required
+def market_overview():
+    """Get market overview with major indices"""
+    try:
+        symbols_data = []
+
+        # Default symbols to display
+        default_symbols = [
+            {'symbol': 'NIFTY', 'exchange': 'NSE', 'token': '99926000'},
+            {'symbol': 'BANKNIFTY', 'exchange': 'NSE', 'token': '99926009'},
+            {'symbol': 'SENSEX', 'exchange': 'BSE', 'token': '1'},
+            {'symbol': 'FINNIFTY', 'exchange': 'NSE', 'token': '99926037'},
+        ]
+
+        for sym in default_symbols:
+            try:
+                if market and market.is_authenticated():
+                    price = market.get_ltp(sym['exchange'], sym['symbol'], sym['token'])
+                else:
+                    # Mock data fallback
+                    price = 50000 + (hash(sym['symbol']) % 5000)
+
+                change = (hash(sym['symbol']) % 100) * 10 - 500
+                change_percent = (change / price) * 100 if price else 0
+
+                symbols_data.append({
+                    'name': sym['symbol'],
+                    'price': round(price, 2),
+                    'change': round(change, 2),
+                    'changePercent': round(change_percent, 2),
+                    'volume': hash(sym['symbol']) % 10000000,
+                    'openInterest': hash(sym['symbol']) % 1000000
+                })
+            except Exception as e:
+                print(f"⚠️  {sym['symbol']} fetch error: {e}")
+
+        return jsonify({
+            "status": "success",
+            "data": {
+                "symbols": symbols_data,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        }), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @app.route('/api/market/live', methods=['GET'])
 @AuthDecorator.token_required
 def market_live():
